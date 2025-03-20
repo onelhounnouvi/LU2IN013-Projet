@@ -1,0 +1,37 @@
+\documentclass[a4paper]{article}
+\usepackage{adjustbox}
+
+\title{Automatisation de la cryptanalyse des cryptosystèmes classiques
+à l’aide d’algorithmes modernes}
+\author{Helder Brito\\O'nel Hounnouvi}
+\date{}
+
+\begin{document}
+\maketitle 
+\section{Substitution monoalphabétique}
+\subsection{Introduction}
+La substitution monoalphabétique est des plus anciennes méthodes de chiffrement. Elle consiste
+à remplacer dans le message clair une lettre donnée de l'alphabet par une autre lettre. Voici un exemple:
+
+\vspace{1em}
+    \begin{adjustbox}{width=\textwidth,center}
+        \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+            \hline
+            A & B & C & D & E & F & G & H & I & J & K & L & M & N & O & P & Q & R & S & T & U & V & W & X & Y & Z \\
+            \hline
+            X & Y & Z & A & B & C & D & E & F & G & H & I & J & K & L & M & N & O & P & Q & R & S & T & U & V & W \\
+            \hline
+        \end{tabular}
+    \end{adjustbox}
+\vspace{1em}
+
+Le message \textit{SUBSTITUTION} devient \textit{PRYPQFQRQFLK}. \\
+
+L'alphabet latin comporte 26 lettres. Cela permet donc de construire $26! = 4 \times 10^{26}$ permutations. Soit de l'ordre de $2^{88}$.
+Sachant qu'environ $2^{58}$ secondes se sont écoulées depuis la création de l'univers, il serait impossible d'explorer toutes les permutations.
+Ce chiffre donne une impression de sûreté qui est toutefois trompeuse\ldots
+
+\subsection{Cryptanalyse}
+La substitution monoalphabétique possède de grosses faiblesses structurelles. Les chiffres utilisant cette méthode sont faciles à casser par 
+analyse fréquentielle. Par exemple, dans un texte français, il y a toujours plus de E que de W.
+\end{document}
