@@ -35,4 +35,13 @@ def hill_climbing(message, nbPermutations, dico_ref, n):
             stagnation = 0
 
     print(f"Meilleur score trouve : {meilleur_score}")
-    return meilleur_message
+    return meilleur_message, meilleur_score
+
+"""corpus_ref = file_to_str("germinal_nettoye")
+dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 4))
+
+a_dechiffrer = file_to_str("chiffres/chiffre_germinal_52_1199_1")
+texte, score = hill_climbing(a_dechiffrer, 10000, dico_ngrams, 4)
+
+str_to_file(texte, "resultat")
+"""

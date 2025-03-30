@@ -40,3 +40,12 @@ def recuit_simule(message, nbPermutations, dico_ref, n, cool_ratio):
 
     print(f"Meilleur score trouve : {meilleur_score}")
     return meilleur_message
+
+"""corpus_ref = file_to_str("germinal_nettoye")
+dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 4))
+
+a_dechiffrer = file_to_str("chiffres/chiffre_germinal_6_105_1")
+texte = recuit_simule(a_dechiffrer, 100000, dico_ngrams, 4, 0.7)
+
+str_to_file(texte, "resultat")
+"""
