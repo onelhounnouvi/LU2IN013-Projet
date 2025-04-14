@@ -1,16 +1,27 @@
 \documentclass[a4paper]{article}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
 \usepackage{adjustbox}
+\usepackage[colorlinks = true, linkcolor = blue]{hyperref}
 
-\title{Automatisation de la cryptanalyse des cryptosystèmes classiques
-à l’aide d’algorithmes modernes}
+\title{
+    \includegraphics[width=5cm]{logo_su.jpg} \\[1em]
+    \Huge Automatisation de la cryptanalyse des cryptosystèmes classiques à l’aide d’algorithmes modernes
+}
+
 \author{Helder Brito\\O'nel Hounnouvi}
 \date{}
 
 \begin{document}
+
 \maketitle 
+\clearpage 
+\tableofcontents
+\clearpage 
 \section{Substitution monoalphabétique}
 \subsection{Introduction}
-La substitution monoalphabétique est des plus anciennes méthodes de chiffrement. Elle consiste
+La substitution monoalphabétique est l'une des plus anciennes méthodes de chiffrement. Elle consiste
 à remplacer dans le message clair une lettre donnée de l'alphabet par une autre lettre. Voici un exemple:
 
 \vspace{1em}
@@ -32,7 +43,35 @@ Sachant qu'environ $2^{58}$ secondes se sont écoulées depuis la création de l
 Ce chiffre donne une impression de sûreté qui est toutefois trompeuse\ldots
 
 \subsection{Cryptanalyse}
-La substitution monoalphabétique possède de grosses faiblesses structurelles. Les chiffres utilisant cette méthode sont faciles à casser par 
-analyse fréquentielle. Par exemple, dans un texte français, il y a toujours plus de E que de W. Notre analyse est basée sur l'analyse des 
-fréquences des lettres, des bigrammes, des trigrammes, des tétragrammes,\ldots dans le message chiffré.
+La substitution monoalphabétique possède de grosses faiblesses structurelles. Les chiffres utilisant cette méthode sont ``facile'' à casser par 
+analyse fréquentielle. Notre analyse ici sera basée sur l'analyse des  fréquences d'apparitions des n-grammes dans le message chiffré. 
+
+Un \textit{n-gramme} est une séquence de $n$ lettres consécutives dans un texte. Par exemple, dans le mot \textit{CRYPTANALYSE}, les bigrammes ($n=2$) incluent \textit{CR}, \textit{RY}, \textit{YP}, \ldots, tandis que les trigrammes ($n=3$) sont \textit{CRY}, \textit{RYP}, \textit{YPT}, \ldots. 
+En utilisant un dictionnaire de référence contenant les fréquences relatives des n-grammes dans un large corpus de textes en français, il est possible d'estimer la probabilité qu'un texte donné soit écrit dans cette langue.
+
+Pour évaluer la qualité des solutions potentielles et identifier celle qui correspond le mieux à du français, nous  attribuons un score à chaque solution avec une fitness function.
+
+La fonction de score utilisée dans ce projet est basée sur la somme des probabilités logarithmiques des n-grammes. C'est la fonction log-vraisemblance Elle est définie comme suit:
+
+\[
+score = - \sum \log(frequence(c_1 \ldots c_n))
+\]
+
+L’objectif ici est de minimiser cette fonction à cause du changement de signe. La solution ayant le plus petit est celle qui sera ``le plus'' français.
+
+\subsection{Métaheuristiques}
+Une \textit{métaheuristique} est un algorithme d’optimisation visant à résoudre des problèmes d’optimisation pour lesquels on ne connaît pas de méthode classique plus efficace.
+Les métaheuristiques sont généralement des algorithmes stochastiques\footnote{Un processus stochastique est un processus qui intègre des éléments d'aléatoire, c'est-à-dire dont l'évolution est déterminée par des phénomènes aléatoires.} itératifs, qui progressent vers un optimum global (c'est-à-dire l'extremum global d'une fonction).
+\subsubsection{Hill Climbing}
+
+L'idée générale pour trouver la clef de déchiffrement est la suivante:
+\begin{enumerate}
+    \item Partir d'une clef aléatoire;
+    \item Utiliser la clef pour déchiffrer le cryptogramme;
+    \item Calculer le score du texte obtenu;
+    \item Si ce score est meilleur que le score précédent, prendre cette nouvelle clef comme clef courante, sinon garder la clef précédente;
+    \item Modifier légèrement la clef courante;
+    \item Retourner en 2 tant qu'on n'a pas trouvé la bonne clef.
+\end{enumerate}
+\
 \end{document}
