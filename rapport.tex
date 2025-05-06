@@ -51,13 +51,13 @@ En utilisant un dictionnaire de référence contenant les fréquences relatives 
 
 Pour évaluer la qualité des solutions potentielles et identifier celle qui correspond le mieux à du français, nous  attribuons un score à chaque solution avec une fitness function.
 
-La fonction de score utilisée dans ce projet est basée sur la somme des probabilités logarithmiques des n-grammes. C'est la fonction log-vraisemblance Elle est définie comme suit:
+La fonction de score utilisée dans ce projet est basée sur la somme des probabilités logarithmiques des n-grammes. C'est la fonction log-vraisemblance. Elle est définie comme suit:
 
 \[
 score = - \sum \log(frequence(c_1 \ldots c_n))
 \]
 
-L’objectif ici est de minimiser cette fonction à cause du changement de signe. La solution ayant le plus petit est celle qui sera ``le plus'' français.
+L’objectif ici est de minimiser cette fonction à cause du changement de signe. La solution ayant le plus petit score est celle qui sera ``le plus'' français.
 
 \subsection{Métaheuristiques}
 Une \textit{métaheuristique} est un algorithme d’optimisation visant à résoudre des problèmes d’optimisation pour lesquels on ne connaît pas de méthode classique plus efficace.
