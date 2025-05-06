@@ -64,7 +64,7 @@ n_gramme_list = [2, 3, 4]
 dico_ngrams_ref = {n: normaliser_dico(dico_n_grammes(texte_ref, n)) for n in n_gramme_list}
 
 # Tester différentes valeurs de permutations
-nb_permutations_list = [250*i for i in range (1,42)]
+nb_permutations_list = [200*i for i in range (1,40)]
 
 # Lancer l'expérimentation
 resultats = evaluer_hill_climbing_scores(textes_chiffres, dico_ngrams_ref, nb_permutations_list, n_gramme_list)
