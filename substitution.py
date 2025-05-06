@@ -48,11 +48,11 @@ def score(dico_ref, message, n):
     """Calcule le score d'un message basé sur les n-grammes"""
     dicoM = normaliser_dico(dico_n_grammes(message, n))  #Extraction des n-grammes normalisés du message
     res = 0
-    for k, val in dicoM.items():
-        if k in dico_ref:
-            res += val*math.log(dico_ref[k]) #Log de la fréquence du n-gramme dans le dico de référence normalisé pondéré par val
+    for n_gramme, freq in dicoM.items():
+        if n_gramme in dico_ref:
+            res += freq*math.log(dico_ref[n_gramme]) #Log de la fréquence du n-gramme dans le dico de référence normalisé pondéré par val
         else:
-            res += val*math.log(1e-5)  #Sinon, ajout du log de 1e-5
+            res += freq*math.log(1e-5)  #Sinon, ajout du log de 1e-5
     return -res  #On retourne l'opposé de la somme pour minimiser
 
 def permutation_alea(dicoP):
@@ -73,3 +73,18 @@ def dechiffrer(message, key):
         else:
             res += lettre  #On garde les caractères non chiffrés (espaces, ponctuation, etc.)
     return res
+
+def score_js(dico_ref, message, n):
+    """Score basé sur la distance de Jensen-Shannon"""
+    dicoM = normaliser_dico(dico_n_grammes(message, n))
+    all_ngrams = set(dicoM) | set(dico_ref)
+    score = 0
+    for ng in all_ngrams:
+        p = dicoM.get(ng, 1e-10)
+        q = dico_ref.get(ng, 1e-10)
+        m = 0.5 * (p + q)
+        if p > 0:
+            score += 0.5 * p * math.log(p / m)
+        if q > 0:
+            score += 0.5 * q * math.log(q / m)
+    return score

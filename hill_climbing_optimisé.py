@@ -36,10 +36,48 @@ def hill_climbing_optimise(message, nbPermutations, dico_ref, n):
 
     print(f"Meilleur score trouve : {meilleur_score}")
     return meilleur_message, meilleur_score
-"""
+
+def hill_climbing_js(message, nbPermutations, dico_ref, n):
+    """Applique l'algorithme du Hill Climbing avec la distance de Jensen-Shannon"""
+    dico_perm = dico_permutation_alea()  # Permutation aléatoire initiale
+    res = dechiffrer(message, dico_perm)
+    scoreInit = score_js(dico_ref, res, n)
+    meilleur_dico = dico_perm
+    meilleur_message = res
+    meilleur_score = scoreInit
+    stagnation = 0
+    max_stagnation = 200
+
+    for _ in range(nbPermutations):
+        new_dico_perm = permutation_alea(dico_perm)
+        new_message = dechiffrer(message, new_dico_perm)
+        new_score = score_js(dico_ref, new_message, n)
+        
+        if new_score < scoreInit:  # On cherche à MINIMISER la distance
+            res = new_message
+            dico_perm = new_dico_perm
+            scoreInit = new_score
+
+            if new_score < meilleur_score:
+                meilleur_dico = dico_perm
+                meilleur_message = new_message
+                meilleur_score = new_score
+                stagnation = 0
+        else:
+            stagnation += 1
+
+        if stagnation == max_stagnation:
+            dico_perm = dico_permutation_alea()
+            res = dechiffrer(message, dico_perm)
+            scoreInit = score_js(dico_ref, res, n)
+            stagnation = 0
+
+    print(f"Meilleur score JS trouvé : {meilleur_score}")
+    return meilleur_message, meilleur_score
+
+
 corpus_ref = file_to_str("germinal_nettoye")
 dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 3))
 
 a_dechiffrer = file_to_str("chiffres/chiffre_germinal_52_1199_1")
-print(hill_climbing_optimise(a_dechiffrer, 10000, dico_ngrams, 3))
-"""
+print(hill_climbing_js(a_dechiffrer, 2000, dico_ngrams, 3))
