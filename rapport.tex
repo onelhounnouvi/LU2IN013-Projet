@@ -3,7 +3,11 @@
 \usepackage[T1]{fontenc}
 \usepackage{graphicx}
 \usepackage{adjustbox}
+\usepackage{enumitem}
 \usepackage[colorlinks = true, linkcolor = blue]{hyperref}
+\usepackage{amsmath}
+\usepackage{float}
+
 
 \title{
     \includegraphics[width=5cm]{logo_su.jpg} \\[1em]
@@ -84,8 +88,8 @@ Pour éviter qu’il ne tourne indéfiniment dans cette impasse, nous introduiso
 Si, après 200 itérations consécutives, aucune amélioration n’a été constatée, l’algorithme s’arrête et retourne la meilleure clef obtenue jusque-là.
 
 
-Pour faire une analogieLe randonneur part d’un point au hasard dans la montagne. À chaque pas, il regarde autour de lui et choisit toujours de descendre si possible. Il répète ce processus en allant toujours vers le bas. Mais, s’il atteint un endroit où aucun pas ne le fait descendre davantage, il s’arrête – même s’il est juste coincé dans un petit creux, et non dans la vraie vallée.
-\subsubsection*{Modification de la clef}
+Pour faire une analogie, le randonneur part d’un point au hasard dans la montagne. À chaque pas, il regarde autour de lui et choisit toujours de descendre si possible. Il répète ce processus en allant toujours vers le bas. Mais, s’il atteint un endroit où aucun pas ne le fait descendre davantage, il s’arrête – même s’il est juste coincé dans un petit creux, et non dans la vraie vallée.
+\subsubsection*{Modification de la clef}\label{sec:modification_de_la_clef}
 
 Il nous faut maintenant définir comment générer une nouvelle clef à partir de celle en cours (étape 5 de l’algorithme).  
 Pour cela, on effectue une permutation aléatoire de deux lettres dans la clef actuelle.
@@ -105,28 +109,141 @@ Plus précisément, si aucune amélioration n’est observée après 200 itérat
 
 Cette stratégie permet d’explorer plusieurs régions de l’espace des solutions, augmentant ainsi significativement les chances d’atteindre le minimum global — autrement dit, la clef correcte.
 
-\subsubsection{Recuit simulé}
-
-
-\subsection{Différence entre Hill Climbing et Recuit simulé}
-
-Pour bien comprendre les différences entre ces deux méthodes d'optimisation, utilisons l'analogie suivante.
-
-\subsubsection{Hill Climbing}
-
-Imaginons un randonneur qui cherche le point le plus bas dans une vallée, mais qui ne voit que ce qui est autour de lui à la lumière de sa lampe frontale. Le randonneur commence à un point au hasard et, à chaque pas, il regarde autour de lui et choisit de descendre si possible. Il répète ce processus en allant toujours vers le bas. Cependant, si le randonneur atteint un endroit où aucun pas ne le fait descendre davantage, il s'arrête, même s'il est coincé dans un petit creux plutôt qu'au fond de la vallée.
-
-Cela peut être efficace si le terrain est simple, mais le randonneur risque de se retrouver bloqué dans un minimum local, au lieu de trouver le minimum global.
 
 \subsubsection{Recuit simulé}
+Le recuit simulé est une méthode d’optimisation inspirée du processus de recuit en métallurgie, où un matériau est chauffé puis refroidi lentement pour atteindre un état de faible énergie.
+Notre algorithme est présenté de la façon suivante:
+\begin{enumerate}
+    \item \textbf{Initialisation:} 
+    \begin{enumerate}
+        \item Partir d'une clé aléatoire $C1$ et d'une température initiale $T_0$
+        \item Utiliser la clé pour dechiffrer le cryptogramme
+        \item Calculer le score du texte obtenu
+    \end{enumerate}
+    \item \textbf{Boucle principale:}
+    \begin{enumerate}[label= (\alph*)]
+        \item Générer une solution voisine $C2$ en faisant une légère modification (voir ~\ref{sec:modification_de_la_clef})
+        \item Calculer le changement de coût, défini par
+        
 
-Le recuit simulé est une stratégie plus astucieuse. Au début, le randonneur est prêt à faire des pas au hasard, même si cela le fait remonter légèrement. Cela lui permet de sortir des petits creux et de continuer à descendre vers le bas. Au fil du temps, la lampe frontale devient plus précise, et le randonneur ne fait plus que des pas qui le font descendre. Cette approche permet au randonneur de ne pas se laisser piéger dans un minimum local et d'augmenter ses chances d'atteindre le minimum global.
+        \[
+            \Delta = score(C2) - score(C1).
+        \]
 
-Le recuit simulé est donc plus efficace pour trouver "le point le plus bas global" d'un terrain complexe, même si cela prend parfois plus de temps.
 
-\subsection{Résultat}
-\subsubsection{Hill climbing}
-\subsubsection{Hill Climbing optimisé}
-\subsubsection{Recuit simulé}
+        \item Si $\Delta \leq 0$, accepter $C2$ (la solution s'améliore ou reste équivalente)
+        \item Sinon, accepter $C2$ avec une probabilité donnée par
+        
 
+        \[
+            P_{\text{accept}} = \exp\left(-\frac{\Delta}{T}\right).
+        \]
+
+
+        \item Mettre à jour la température avec le coefficient de refroidissement $\alpha$ après un nombre d'itérations:
+        
+
+        \[
+            T \leftarrow \alpha T, \quad \text{avec } 0 < \alpha < 1.
+        \]
+
+
+    \end{enumerate}
+    
+    \item \textbf{Critère d'arrêt:} Terminer l'algorithme après un nombre prédéfini d'itérations, puis retourner la solution finale $s$.
+\end{enumerate}
+
+
+Le recuit simulé échappe aux minima locaux en introduisant une étape d'acceptation probabiliste des solutions moins bonnes. Concrètement, au lieu d'accepter uniquement les modifications qui améliorent le score, l'algorithme accepte une solution voisine avec la probabilité $P_{\text{accept}}$.
+
+Au début, la température T est élevée, ce qui rend l'expression $\exp\left(-\frac{\Delta}{T}\right)$ relativement grande. Cela permet donc à l'algorithme d'accepter des solutions moins bonnes et d'explorer plus librement l'espace de recherche, en sautant potentiellement hors d'un minimum local.
+
+Au fur et à mesure que l'algorithme progresse, la température est progressivement abaissée (refroidissement), ce qui diminue la probabilité d'accepter des solutions moins performantes. Ainsi, en phase finale, le recuit simulé affine la solution dans un voisinage qui se rapproche d'un minimum global.
+\section{Résultats}
+
+Pour évaluer l’efficacité des différentes méthodes métaheuristiques, nous avons réalisé trois jeux de tests pour chaque algorithme. Dans chacun de ces tests, nous avons utilisé des textes chiffrés de longueurs différentes : 110, 509 et 1150 caractères.
+
+L'objectif était d'observer l’évolution du score (log-vraisemblance) en fonction du nombre maximum de permutations autorisées pendant l'exécution de l'algorithme. Cela permet d’analyser la rapidité de convergence, la stabilité, ainsi que la capacité de chaque méthode à s’approcher du minimum global.
+
+Les résultats obtenus sont présentés sous forme de graphiques pour une comparaison visuelle claire entre les méthodes. Ils sont tous disponibles en \hyperref[sec:annexes]{annexe}.
+
+\subsection{Hill Climbing}
+
+\textbf{Impact de la longueur du texte :} \\
+Plus le texte est long, plus les \textit{scores moyens diminuent}, en particulier pour les \textit{trigrammes} ($n = 3$) et \textit{quadrigrammes} ($n = 4$). Cela s’explique par le fait qu’un texte plus long fournit \textit{davantage de contexte statistique}, facilitant la détection de séquences plausibles en français.
+
+\textbf{Observations principales :}
+\begin{itemize}
+  \item \textbf{Scores limités malgré plus de permutations :} L’algorithme atteint souvent un \textit{plateau} de performance, même lorsque le nombre de permutations autorisées est élevé. (Voir figure~\ref{fig:hill_110})
+  \item \textbf{Problème des minima locaux :} Le hill climbing classique a du mal à \textit{s’échapper des minima locaux}, ce qui réduit son efficacité, surtout pour des critères exigeants comme les \textit{quadrigrammes}. (Voir figure~\ref{fig:hill_509})
+  \item \textbf{Dépendance à la clef initiale :} Les résultats peuvent fortement varier selon la \textit{clef de départ}, ce qui rend l’algorithme \textit{peu fiable} dans certains cas. (Voir figure~\ref{fig:hill_1150})
+\end{itemize}
+
+\textbf{Remarque :} Le \textit{nombre de permutations effectivement réalisées} peut être très inférieur au maximum autorisé. Par exemple, si l’algorithme ne progresse plus, il peut s’arrêter alors qu’il reste encore de nombreuses permutations possibles.
+
+
+\subsection{Hill Climbing optimisé}
+
+Lorsque l’on applique la version optimisée du hill climbing, on observe une amélioration notable de la qualité des résultats, notamment pour les trigrammes ($n=3$) et quadrigrammes ($n=4$). Grâce au mécanisme de relance (génération d’une nouvelle clef aléatoire après 200 itérations sans amélioration), l’algorithme parvient à explorer davantage l’espace des solutions.
+
+\textbf{Observations principales} :
+\begin{itemize}
+    \item \textbf{Amélioration des scores moyens} : Pour un même nombre de permutations, les scores finaux sont généralement supérieurs à ceux obtenus par le hill climbing standard, en particulier pour les grands $n$-grammes.
+    
+    \item \textbf{Stabilité accrue} : Les résultats sont plus réguliers, avec une variance réduite par rapport au hill climbing simple. (Voir figure~\ref{fig:hillopt_509}) Cela signifie que l’algorithme est plus fiable, et ne dépend pas autant du hasard de la clef initiale.
+    
+    \item \textbf{Gain d’efficacité sur les grands textes} : Le bénéfice de la relance devient particulièrement visible avec les textes plus longs. (Voir figure~\ref{fig:hillopt_1150}) La diversité des séquences statistiques donne plus de chances à une clef correcte d’être distinguée par le score.
+\end{itemize}
+
+\textbf{Remarque} : Ces observations ne semblent pas tout à fait correspondre dans le cas où les textes sont courts : il n'y à presque aucun changement avec le hill climbing classique.
+
+
+\subsection{Recuit simulé}
+
+\clearpage
+\appendix
+\section*{Annexes}
+\addcontentsline{toc}{section}{Annexes}
+\label{sec:annexes}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbing1.png}
+    \caption{Hill Climbing sur un texte de 110 caractères.}
+    \label{fig:hill_110}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbing2.png}
+    \caption{Hill Climbing sur un texte de 509 caractères.}
+    \label{fig:hill_509}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbing3.png}
+    \caption{Hill Climbing sur un texte de 1150 caractères.}
+    \label{fig:hill_1150}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbingOptimiser1.png}
+    \caption{Hill Climbing optimisé sur un texte de 110 caractères.}
+    \label{fig:hillopt_110}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbingOptimiser2.png}
+    \caption{Hill Climbing optimisé sur un texte de 509 caractères.}
+    \label{fig:hillopt_509}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbingOptimiser3.png}
+    \caption{Hill Climbing optimisé sur un texte de 1150 caractères.}
+    \label{fig:hillopt_1150}
+\end{figure}
 \end{document}
