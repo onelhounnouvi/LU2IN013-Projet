@@ -1,6 +1,6 @@
 from substitution import *
 
-def hill_climbing_optimise(message, nbPermutations, dico_ref, n):
+def hill_climbing_optimise(message, nbPermutations, dico_ref, n, max_stagnation):
     """Applique l'algorithme du Hill Climbing pour cryptanalyser le texte chiffré"""
     dico_perm = dico_permutation_alea()  #Génère une permutation aléatoire
     res = dechiffrer(message, dico_perm)
@@ -9,7 +9,6 @@ def hill_climbing_optimise(message, nbPermutations, dico_ref, n):
     meilleur_message = res  # Initialisation du meilleur dictionnaire (message déchiffré)
     meilleur_score = scoreInit  # Initialisation du meilleur score
     stagnation = 0
-    max_stagnation = 200
 
     for _ in range(nbPermutations):
         new_dico_perm = permutation_alea(dico_perm)  #Applique la permutation
@@ -34,10 +33,9 @@ def hill_climbing_optimise(message, nbPermutations, dico_ref, n):
             scoreInit = score(dico_ref, res, n)
             stagnation = 0
 
-    print(f"Meilleur score trouve : {meilleur_score}")
     return meilleur_message, meilleur_score
 
-def hill_climbing_js(message, nbPermutations, dico_ref, n):
+def hill_climbing_js(message, nbPermutations, dico_ref, n, max_stagnation):
     """Applique l'algorithme du Hill Climbing avec la distance de Jensen-Shannon"""
     dico_perm = dico_permutation_alea()  # Permutation aléatoire initiale
     res = dechiffrer(message, dico_perm)
@@ -46,7 +44,6 @@ def hill_climbing_js(message, nbPermutations, dico_ref, n):
     meilleur_message = res
     meilleur_score = scoreInit
     stagnation = 0
-    max_stagnation = 200
 
     for _ in range(nbPermutations):
         new_dico_perm = permutation_alea(dico_perm)
@@ -72,12 +69,12 @@ def hill_climbing_js(message, nbPermutations, dico_ref, n):
             scoreInit = score_js(dico_ref, res, n)
             stagnation = 0
 
-    print(f"Meilleur score JS trouvé : {meilleur_score}")
     return meilleur_message, meilleur_score
 
-
+"""
 corpus_ref = file_to_str("germinal_nettoye")
 dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 3))
 
 a_dechiffrer = file_to_str("chiffres/chiffre_germinal_52_1199_1")
-print(hill_climbing_js(a_dechiffrer, 2000, dico_ngrams, 3))
+print(hill_climbing_js(a_dechiffrer, 2000, dico_ngrams, 3, 150))
+"""
