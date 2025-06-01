@@ -1,0 +1,255 @@
+\documentclass[a4paper]{article}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{enumitem}
+\usepackage[colorlinks = true, linkcolor = blue]{hyperref}
+\usepackage{amsmath}
+\usepackage{float}
+
+\usepackage{xcolor}
+
+\newcommand{\highlight}[1]{\textbf{\textcolor{red}{\underline{#1}}}}
+
+
+
+\title{
+    \includegraphics[width=5cm]{logo_su.jpg} \\[1em]
+    \Huge Automatisation de la cryptanalyse des cryptosystèmes classiques à l’aide d’algorithmes modernes
+}
+
+\author{Helder Brito\\O'nel Hounnouvi}
+\date{}
+
+\begin{document}
+
+\maketitle 
+\clearpage 
+\tableofcontents
+\clearpage 
+
+\section{Substitution monoalphabétique}
+
+\subsection{Introduction}
+
+La substitution monoalphabétique est l'une des plus anciennes méthodes de chiffrement. Elle consiste à remplacer dans le message clair une lettre donnée de l'alphabet par une autre lettre. Voici un exemple:
+
+\vspace{1em}
+\begin{adjustbox}{width=\textwidth,center}
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+        \hline
+        A & B & C & D & E & F & G & H & I & J & K & L & M & N & O & P & Q & R & S & T & U & V & W & X & Y & Z \\
+        \hline
+        X & Y & Z & A & B & C & D & E & F & G & H & I & J & K & L & M & N & O & P & Q & R & S & T & U & V & W \\
+        \hline
+    \end{tabular}
+\end{adjustbox}
+\vspace{1em}
+
+Le message \textit{SUBSTITUTION} devient \textit{PRYPQFQRQFLK}.\\
+
+L'alphabet latin comporte 26 lettres. Cela permet donc de construire $26! = 4 \times 10^{26}$ permutations, soit de l'ordre de $2^{88}$.  
+Sachant qu’environ $2^{58}$ secondes se sont écoulées depuis la création de l’univers, il serait impossible d’explorer toutes les permutations.  
+Ce chiffre donne une impression de sûreté qui est toutefois trompeuse\ldots
+
+\subsection{Cryptanalyse}
+
+La substitution monoalphabétique possède de grosses faiblesses structurelles. Les chiffres utilisant cette méthode sont « faciles » à casser par analyse fréquentielle.  
+Notre analyse ici sera basée sur l’analyse des fréquences d’apparition des n-grammes dans le message chiffré.
+
+Un \textit{n-gramme} est une séquence de $n$ lettres consécutives dans un texte. Par exemple, dans le mot \textit{CRYPTANALYSE}, les bigrammes ($n=2$) incluent \textit{CR}, \textit{RY}, \textit{YP}, \ldots, tandis que les trigrammes ($n=3$) sont \textit{CRY}, \textit{RYP}, \textit{YPT}, \ldots.  
+En utilisant un dictionnaire de référence contenant les fréquences relatives des n-grammes dans un large corpus de textes en français, il est possible d’estimer la probabilité qu’un texte donné soit écrit dans cette langue.
+
+Pour évaluer la qualité des solutions potentielles et identifier celle qui correspond le mieux à du français, nous attribuons un score à chaque solution avec une \textit{fitness function}.
+
+La fonction de score utilisée dans ce projet est basée sur la somme des probabilités logarithmiques des n-grammes. C’est la fonction de log-vraisemblance. Elle est définie comme suit :
+
+\[
+score = - \sum \log(frequence(c_1 \ldots c_n))
+\]
+
+L’objectif ici est de minimiser cette fonction à cause du changement de signe. La solution ayant le plus petit score est celle qui sera « le plus » français.
+
+\subsection{Métaheuristiques}
+
+Une métaheuristique est un algorithme d’optimisation itératif et stochastique\footnote{Un processus stochastique est un processus dont l’évolution est déterminée par des phénomènes aléatoires.} destiné à résoudre des problèmes pour lesquels aucune méthode classique plus efficace n'existe, en progressant vers l’extrémum global d’une fonction.
+
+\subsubsection{Hill Climbing}
+
+L’idée générale pour trouver la clef de déchiffrement est la suivante :
+\begin{enumerate}
+    \item Partir d’une clef aléatoire ;
+    \item Utiliser la clef pour déchiffrer le cryptogramme ;
+    \item Calculer le score du texte obtenu ;
+    \item Si ce score est meilleur que le score précédent, adopter cette nouvelle clef comme clef courante ; sinon, conserver l’ancienne ;
+    \item Modifier légèrement la clef courante ;
+    \item Revenir à l’étape 2 tant que la clef correcte n’a pas été trouvée.
+\end{enumerate}
+
+Il arrive cependant fréquemment que l’algorithme se retrouve bloqué : il n’arrive plus à améliorer la clef actuelle, bien que la véritable clef n’ait pas encore été trouvée.  
+Pour éviter qu’il ne tourne indéfiniment dans cette impasse, nous introduisons un compteur qui mesure le nombre de tentatives infructueuses de modification de la clef.  
+Si, après 200 itérations consécutives, aucune amélioration n’a été constatée, l’algorithme s’arrête et retourne la meilleure clef obtenue jusque-là.
+
+\subsubsection*{Modification de la clef}\label{sec:modification_de_la_clef}
+
+Il nous faut maintenant définir comment générer une nouvelle clef à partir de celle en cours (étape 5 de l’algorithme).  
+Pour cela, on effectue une permutation aléatoire de deux lettres dans la clef actuelle.
+
+\begin{center}
+\texttt{Q\highlight{W}ERTZUIOPASDF\highlight{G}HJKLXCVBNM} $\rightarrow$ \texttt{Q\highlight{G}ERTZUIOPASDF\highlight{W}HJKLXCVBNM}
+\end{center}
+
+
+\subsubsection{Hill Climbing optimisé}
+
+Comme son nom l’indique, cette méthode est une version améliorée du Hill Climbing classique.  
+Le principal inconvénient de l’approche standard est sa tendance à rester bloquée dans un minimum local, empêchant ainsi de découvrir la véritable clef.
+
+L’algorithme optimisé propose une solution à ce problème : au lieu d’abandonner après un certain nombre d’échecs, il effectue un redémarrage aléatoire.  
+Plus précisément, si aucune amélioration n’est observée après 200 itérations consécutives, une nouvelle clef complètement aléatoire est générée, et l’algorithme recommence depuis l’étape 1.
+
+Cette stratégie permet d’explorer plusieurs régions de l’espace des solutions, augmentant ainsi significativement les chances d’atteindre le minimum global — autrement dit, la clef correcte.
+
+
+\subsubsection{Recuit simulé}
+Le recuit simulé est une méthode d’optimisation inspirée du processus de recuit en métallurgie, où un matériau est chauffé puis refroidi lentement pour atteindre un état de faible énergie.
+Notre algorithme est présenté de la façon suivante:
+\begin{enumerate}
+    \item \textbf{Initialisation:} 
+    \begin{enumerate}
+        \item Partir d'une clé aléatoire $C1$ et d'une température initiale $T_0$
+        \item Utiliser la clé pour dechiffrer le cryptogramme
+        \item Calculer le score du texte obtenu
+    \end{enumerate}
+    \item \textbf{Boucle principale:}
+    \begin{enumerate}[label= (\alph*)]
+        \item Générer une solution voisine $C2$ en faisant une légère modification (voir ~\ref{sec:modification_de_la_clef})
+        \item Calculer le changement de coût, défini par
+        
+
+        \[
+            \Delta = score(C2) - score(C1).
+        \]
+
+
+        \item Si $\Delta \leq 0$, accepter $C2$ (la solution s'améliore ou reste équivalente)
+        \item Sinon, accepter $C2$ avec une probabilité donnée par
+        
+
+        \[
+            P_{\text{accept}} = \exp\left(-\frac{\Delta}{T}\right).
+        \]
+
+
+        \item Mettre à jour la température avec le coefficient de refroidissement $\alpha$ après un nombre d'itérations:
+        
+
+        \[
+            T \leftarrow \alpha T, \quad \text{avec } 0 < \alpha < 1.
+        \]
+
+
+    \end{enumerate}
+    
+    \item \textbf{Critère d'arrêt:} Terminer l'algorithme après un nombre prédéfini d'itérations, puis retourner la solution finale $s$.
+\end{enumerate}
+
+
+Le recuit simulé échappe aux minima locaux en introduisant une étape d'acceptation probabiliste des solutions moins bonnes. Concrètement, au lieu d'accepter uniquement les modifications qui améliorent le score, l'algorithme accepte une solution voisine avec la probabilité $P_{\text{accept}}$.
+
+Au début, la température T est élevée, ce qui rend l'expression $\exp\left(-\frac{\Delta}{T}\right)$ relativement grande. Cela permet donc à l'algorithme d'accepter des solutions moins bonnes et d'explorer plus librement l'espace de recherche, en sautant potentiellement hors d'un minimum local.
+
+Au fur et à mesure que l'algorithme progresse, la température est progressivement abaissée (refroidissement), ce qui diminue la probabilité d'accepter des solutions moins performantes. Ainsi, en phase finale, le recuit simulé affine la solution dans un voisinage qui se rapproche d'un minimum global.
+
+\section{Résultats}
+
+Pour évaluer l’efficacité des différentes méthodes métaheuristiques, nous avons réalisé trois jeux de tests pour chaque algorithme. Dans chacun de ces tests, nous avons utilisé des textes chiffrés de longueurs différentes : 110, 509 et 1150 caractères.
+
+L'objectif était d'observer l’évolution du score (log-vraisemblance) en fonction du nombre maximum de permutations autorisées pendant l'exécution de l'algorithme. Cela permet d’analyser la rapidité de convergence, la stabilité, ainsi que la capacité de chaque méthode à s’approcher du minimum global.
+
+Les résultats obtenus sont présentés sous forme de graphiques pour une comparaison visuelle claire entre les méthodes.
+
+\subsection{Hill Climbing}
+
+Pour évaluer l’efficacité des différentes méthodes métaheuristiques, nous avons réalisé trois jeux de tests pour chaque algorithme avec des textes chiffrés de 100, 500 et 1150 caractères.
+
+Les résultats obtenus sont présentés en \hyperref[sec:annexes]{annexe}, notamment :
+\begin{itemize}
+    \item \hyperref[fig:hill_110]{Figure~\ref*{fig:hill_110}} : Hill Climbing sur un texte de 110 caractères,
+    \item \hyperref[fig:hill_509]{Figure~\ref*{fig:hill_509}} : Hill Climbing sur un texte de 509 caractères,
+    \item \hyperref[fig:hill_1150]{Figure~\ref*{fig:hill_1150}} : Hill Climbing sur un texte de 1150 caractères.
+\end{itemize}
+
+\textbf{Impact de la longueur du texte} : Plus le texte est long, plus les scores tendent à baisser en moyenne, notamment pour les n-grammes de taille $3$ et $4$. Cela s'explique par le fait qu’un texte plus long fournit plus de contexte statistique, facilitant ainsi la détection de motifs valides en français.
+
+\textbf{Limites du hill climbing} : L’algorithme ne parvient pas toujours à améliorer le score significativement, même en augmentant le nombre de permutations. Cela illustre bien la faiblesse principale de la méthode : son incapacité à sortir facilement d’un minimum local, surtout pour des critères exigeants (comme les quadrigrammes).
+
+\textbf{Remarque} : Il est important ici de noter que le nombre de permutations effectuées n'équivaut pas forcément au nombre de permutations maximales autorisées. En effet, on peut très bien imaginer un cas où il reste 2000 permutations disponibles mais notre algorithme s'arrête car on a stagné durant 200 itérations.
+durant 200 itérations
+
+
+\subsection{Hill Climbing optimisé}
+
+Lorsque l’on applique la version optimisée du hill climbing, on observe une amélioration notable de la qualité des résultats, notamment pour les trigrammes ($n=3$) et quadrigrammes ($n=4$). Grâce au mécanisme de relance (génération d’une nouvelle clef aléatoire après 200 itérations sans amélioration), l’algorithme parvient à explorer davantage l’espace des solutions.
+
+\textbf{Observations principales} :
+\begin{itemize}
+    \item \textbf{Amélioration des scores moyens} : Pour un même nombre de permutations, les scores finaux sont généralement supérieurs à ceux obtenus par le hill climbing standard, en particulier pour les grands $n$-grammes.
+    
+    \item \textbf{Stabilité accrue} : Les résultats sont plus réguliers, avec une variance réduite par rapport au hill climbing simple. (Voir figure~\ref{fig:hillopt_509}) Cela signifie que l’algorithme est plus fiable, et ne dépend pas autant du hasard de la clef initiale.
+    
+    \item \textbf{Gain d’efficacité sur les grands textes} : Le bénéfice de la relance devient particulièrement visible avec les textes plus longs. (Voir figure~\ref{fig:hillopt_1150}) La diversité des séquences statistiques donne plus de chances à une clef correcte d’être distinguée par le score.
+\end{itemize}
+
+\textbf{Remarque} : Ces observations ne semblent pas tout à fait correspondre dans le cas où les textes sont courts : il n'y à presque aucun changement avec le hill climbing classique.
+
+\subsection{Recuit simulé}
+
+\clearpage
+\appendix
+\section*{Annexes}
+\addcontentsline{toc}{section}{Annexes}
+\label{sec:annexes}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbing1.png}
+    \caption{Hill Climbing sur un texte de 110 caractères.}
+    \label{fig:hill_110}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbing2.png}
+    \caption{Hill Climbing sur un texte de 509 caractères.}
+    \label{fig:hill_509}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbing3.png}
+    \caption{Hill Climbing sur un texte de 1150 caractères.}
+    \label{fig:hill_1150}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbingOptimiser1.png}
+    \caption{Hill Climbing optimisé sur un texte de 110 caractères.}
+    \label{fig:hillopt_110}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbingOptimiser2.png}
+    \caption{Hill Climbing optimisé sur un texte de 509 caractères.}
+    \label{fig:hillopt_509}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{HillClimbingOptimiser3.png}
+    \caption{Hill Climbing optimisé sur un texte de 1150 caractères.}
+    \label{fig:hillopt_1150}
+\end{figure}
+\end{document}
