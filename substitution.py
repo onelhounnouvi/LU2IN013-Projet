@@ -40,22 +40,34 @@ def dico_n_grammes(corpus, n):
     return dico
 
 def normaliser_dico(dico_ngrams):
-    """Transforme un dictionnaire d'occurences de n-grammes en un dictionnaire de probabilités. """
+    """Transforme un dictionnaire d'occurrences de n-grammes en un dictionnaire de probabilités. """
     total = sum(dico_ngrams.values())  # Somme totale des occurrences
     return {k: (v / total) for k, v in dico_ngrams.items()}  # Conversion en fréquence
 
 def score(dico_ref, message, n):
-    """Calcule le score d'un message basé sur les n-grammes"""
-    dicoM = normaliser_dico(dico_n_grammes(message, n))  #Extraction des n-grammes normalisés du message
-    res = 0
-    for n_gramme, freq in dicoM.items():
-        if n_gramme in dico_ref:
-            res += freq*math.log(dico_ref[n_gramme]) #Log de la fréquence du n-gramme dans le dico de référence normalisé pondéré par val
-        else:
-            res += freq*math.log(1e-5)  #Sinon, ajout du log de 1e-5
+    """Calcule le score d'un message basé sur les n-grammes en utilisant sur la log-vraisemblance"""
+    dicoM = dico_n_grammes(message, n)  #Extraction des n-grammes du message
+    res = 0.0
+    for k in dicoM:
+        val = dico_ref.get(k, 1e-5) #Fréquence du n-gramme dans le dico de référence normalisé si présent, 1e-5 sinon
+        res += math.log(val) #Log
     return -res  #On retourne l'opposé de la somme pour minimiser
 
-def permutation_alea(dicoP):
+def score2(dico_ref, message, n):
+    """Calcule le score d'un message basé sur les n-grammes en utilisant sur la formule suivante
+                         1
+                   -------------
+                    1 + |f - r|
+    f : fréquence d'un n-gramme dans le message crypté et r : celle dans le dictionnaire de référence
+    """
+    dicoM = normaliser_dico(dico_n_grammes(message, n))  #Extraction des n-grammes du message sous forme normalisée
+    res = 0.0
+    for k, val in dicoM.items():
+        val_ref = dico_ref.get(k, 1e-5) #Fréquence dans le dico de référence normalisé si présent, 1e-5 sinon
+        res += float(1/(1 + math.fabs(val_ref - val)))
+    return res
+
+def modifier_cle(dicoP):
     """Modifie légèrement le dico en faisant une permutation aléatoire de deux lettres"""
     new_dicoP = dicoP.copy()
     r1, r2 = random.sample(alphabet, 2)
@@ -73,18 +85,3 @@ def dechiffrer(message, key):
         else:
             res += lettre  #On garde les caractères non chiffrés (espaces, ponctuation, etc.)
     return res
-
-def score_js(dico_ref, message, n):
-    """Score basé sur la distance de Jensen-Shannon"""
-    dicoM = normaliser_dico(dico_n_grammes(message, n))
-    all_ngrams = set(dicoM) | set(dico_ref)
-    score = 0
-    for ng in all_ngrams:
-        p = dicoM.get(ng, 1e-10)
-        q = dico_ref.get(ng, 1e-10)
-        m = 0.5 * (p + q)
-        if p > 0:
-            score += 0.5 * p * math.log(p / m)
-        if q > 0:
-            score += 0.5 * q * math.log(q / m)
-    return score

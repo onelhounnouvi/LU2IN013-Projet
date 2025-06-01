@@ -1,74 +1,74 @@
-from substitution import file_to_str, normaliser_dico, dico_n_grammes, score
-from recuit_simule import recuit_simule
-import time
+import numpy as np
 import matplotlib.pyplot as plt
+from recuit_simule import *
+
+def evaluer_evolution(message, nbPermutation_total, dico_ref, n, cool_ratio, cool_time, repetitions, extraction_points):
+    """Lance plusieurs répétitions du recuit simulé, renvoie un tableau des scores moyens et extrait la valeur du score aux itérations d'intérêt"""
+
+    T_initial = calculer_temperature_initiale(message, dico_ref, n)
+    print(f"Température initiale : {T_initial:.2f}")
+    all_extracted = []
+
+    for rep in range(repetitions):
+        _, _, history = recuit_simule(message, nbPermutation_total, dico_ref, n, cool_ratio, cool_time, T_initial)
+        # Extraire les valeurs aux itérations souhaitées (attention à l'indexation : itération 1500 -> index 1499)
+        extracted = [history[iter_idx - 1] for iter_idx in extraction_points if iter_idx <= len(history)]
+        all_extracted.append(extracted)
+
+    all_extracted = np.array(all_extracted)  # Forme (repetitions, nombre d'extraction_points)
+    avg_scores = np.mean(all_extracted, axis=0)
+    return extraction_points, avg_scores
 
 
-def evaluer_recuit_simule_scores(textes_chiffres, dico_ref, nb_permutations_list, n_gramme_list, cool_ratio_list):
-    """Évalue l'efficacité du recuit simulé en fonction du score final, du nombre de permutations,
-    de la taille des n-grammes et du coefficient de refroidissement."""
+def evaluer_diff_cool_ratios(taille, message, nbPermutation_total, dico_ref, n, cool_ratios, repetitions, cool_time,
+                             extraction_points):
+    """Teste plusieurs valeurs de cool_ratio pour un même message et trace un graphique"""
+    results = {}
+    for cr in cool_ratios:
+        print(f"\nTest pour cool_ratio = {cr}")
+        iters, avg_scores = evaluer_evolution(message, nbPermutation_total, dico_ref, n, cr, cool_time, repetitions,
+                                              extraction_points)
+        results[cr] = avg_scores
 
-    resultats = []
+    # Tracé des courbes pour chaque cool_ratio
+    plt.figure(figsize=(10, 6))
+    for cr, avg_scores in results.items():
+        plt.plot(iters, avg_scores, marker = 'o', label=f"cool_ratio = {cr}")
+    plt.xlabel("Nombre d'itérations")
+    plt.ylabel("Score moyen")
+    plt.title(f"Évolution du score moyen en fonction des itérations. Texte de taille {taille}.\nRefroidissement toutes les 1000 itérations")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
 
-    for taille, message_chiffre in textes_chiffres.items():
-        print(f"\n--- TEST SUR UN TEXTE DE {taille} CARACTÈRES ---")
+    # Sauvegarde automatique dans un fichier
+    filename = f"graphe_recuit_{taille}_cool_ratios.png"
+    plt.savefig(filename)
+    plt.close()  # Ferme la figure pour éviter de saturer la mémoire
 
-        for n in n_gramme_list:
-            for cool_ratio in cool_ratio_list:
-                scores = []  # Pour suivre l'évolution du score final selon le nombre de permutations
-                for nb_permutations in nb_permutations_list:
-                    print(
-                        f"Test avec {nb_permutations} permutations, n-gramme de taille {n} et cool_ratio={cool_ratio}...")
+    print(f"Graphique sauvegardé sous {filename}")
+    return results
 
-                    start_time = time.time()
-                    texte_dechiffre, score_final = recuit_simule(message_chiffre, nb_permutations, dico_ref[n], n, cool_ratio)
-                    elapsed_time = time.time() - start_time
-
-                    scores.append(score_final)
-
-                    resultats.append({
-                        "Taille Texte": taille,
-                        "n-gramme": n,
-                        "Permutations": nb_permutations,
-                        "Cool_ratio": cool_ratio,
-                        "Score Final": round(score_final, 2),
-                        "Temps (s)": round(elapsed_time, 2)
-                    })
-
-                    print(f" -> Score Final : {score_final:.2f} | Temps : {elapsed_time:.2f}s")
-
-                # Affichage de l'évolution du score pour la configuration (n, cool_ratio)
-                plt.plot(nb_permutations_list, scores, label=f"n={n}, cool_ratio={cool_ratio}")
-
-            plt.xlabel("Nombre de permutations")
-            plt.ylabel("Score Final")
-            plt.title(f"Évolution du score pour un texte de {taille} caractères (n={n})")
-            plt.legend()
-            plt.show()
-
-    return resultats
-
-
-# Chargement des textes chiffrés
+"""Programme principal"""
+# Chargement du texte chiffré et du texte de référence (par exemple, un texte de 500 caractères)
 textes_chiffres = {
     110: file_to_str("chiffres/chiffre_germinal_20_110_1"),
     509: file_to_str("chiffres/chiffre_germinal_22_509_1"),
     1150: file_to_str("chiffres/chiffre_germinal_58_1150_2")
 }
 
-# Chargement du texte de référence
 texte_ref = file_to_str("germinal_nettoye")
+n = 4  #Taille des n-grammes
+dico_ngrams_ref = normaliser_dico(dico_n_grammes(texte_ref, n))
 
-# Construction des dictionnaires de fréquences des n-grammes pour les tailles voulues
-n_gramme_list = [2, 3, 4]
-dico_ngrams_ref = {n: normaliser_dico(dico_n_grammes(texte_ref, n)) for n in n_gramme_list}
+# Paramètres d'évaluation
+nbPermutation_total = 6000  # Exécuter chaque simulation sur 6000 itérations
+extraction_points = list(range(200, nbPermutation_total + 1, 200))
+cool_ratios = [0.75, 0.6, 0.45, 0.3, 0.15]  # Valeurs testées
+repetitions = 100  # Nombre de répétitions pour chaque configuration
+cool_time = 1000  # Nombre d'itérations entre chaque refroidissement
 
-# Définition de la liste des nombres de permutations à tester
-nb_permutations_list = [250 * i for i in range(1, 121)]
-
-# Définition de plusieurs valeurs pour le coefficient de refroidissement
-cool_ratio_list = [0.9, 0.7, 0.5, 0.09]
-
-# Lancement de l'expérimentation
-resultats_recuit = evaluer_recuit_simule_scores(textes_chiffres, dico_ngrams_ref, nb_permutations_list, n_gramme_list,
-                                                cool_ratio_list)
+# Lancer l'évaluation pour comparer les courbes pour différents cool_ratios
+for taille, message_chiffre in textes_chiffres.items():
+    results = evaluer_diff_cool_ratios(taille, message_chiffre, nbPermutation_total, dico_ngrams_ref, n, cool_ratios,
+                                       repetitions, cool_time, extraction_points)
