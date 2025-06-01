@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from hill_climbing import hill_climbing_ameliore
+from hill_climbing import hill_climbing_optimise
 from recuit_simule import recuit_simule, calculer_temperature_initiale
 from substitution import dico_n_grammes, file_to_str, normaliser_dico
 
@@ -46,7 +46,7 @@ def evaluer_taux_reussite_hillClimbing(message, texte_clair, nbPermutations, dic
     succes = 0
     dico_text_ref = dico_n_grammes(texte_clair, n)
     for rep in range(repetitions):
-        texte_dechiffre, _, _ = hill_climbing_ameliore(message, nbPermutations, dico_ref, n, max_stagnation)
+        texte_dechiffre, _, _ = hill_climbing_optimise(message, nbPermutations, dico_ref, n, max_stagnation)
 
         # Calculer le ratio de similarité entre le texte déchiffré et le texte clair
         dico_text = dico_n_grammes(texte_dechiffre, n)

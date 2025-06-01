@@ -32,7 +32,7 @@ def hill_climbing(message, nbPermutations, dico_ref, n, max_stagnation):
     return message_courant, score_courant
 
 
-def hill_climbing_ameliore(message, nbPermutations, dico_ref, n, max_stagnation):
+def hill_climbing_optimise(message, nbPermutations, dico_ref, n, max_stagnation):
     """Applique une version améliorée du Hill Climbing pour cryptanalyser le texte chiffré."""
 
     # Initialisation de l'état courant
@@ -83,6 +83,6 @@ def hill_climbing_ameliore(message, nbPermutations, dico_ref, n, max_stagnation)
 dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 4))
 
 a_dechiffrer = file_to_str("chiffres/chiffre_germinal_22_509_1")
-texte, scoref, _ = hill_climbing_ameliore(a_dechiffrer, 5000, dico_ngrams, 4, 50)
+texte, scoref, _ = hill_climbing_optimise(a_dechiffrer, 5000, dico_ngrams, 4, 50)
 
 str_to_file(texte, "resultat")"""
