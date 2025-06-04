@@ -1,8 +1,9 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from hill_climbing import hill_climbing_optimise
-from recuit_simule import recuit_simule, calculer_temperature_initiale
-from substitution import dico_n_grammes, file_to_str, normaliser_dico
+from hill_climbing import *
+from recuit_simule import *
+from substitution import *
+from tabou import *
 
 
 def ngram_similarite(dict1, dict2):
@@ -46,7 +47,35 @@ def evaluer_taux_reussite_hillClimbing(message, texte_clair, nbPermutations, dic
     succes = 0
     dico_text_ref = dico_n_grammes(texte_clair, n)
     for rep in range(repetitions):
+        texte_dechiffre, _, _ = hill_climbing(message, nbPermutations, dico_ref, n, max_stagnation)
+
+        # Calculer le ratio de similarité entre le texte déchiffré et le texte clair
+        dico_text = dico_n_grammes(texte_dechiffre, n)
+        ratio = ngram_similarite(dico_text, dico_text_ref)
+        if ratio >= seuil:
+            succes += 1
+    return (succes / repetitions) * 100
+
+def evaluer_taux_reussite_hillClimbing_opti(message, texte_clair, nbPermutations, dico_ref, n, max_stagnation, repetitions, seuil):
+    """Retourne le taux de réussite (en %) du hill Climbing en comparant le texte déchiffré au texte clair"""
+    succes = 0
+    dico_text_ref = dico_n_grammes(texte_clair, n)
+    for rep in range(repetitions):
         texte_dechiffre, _, _ = hill_climbing_optimise(message, nbPermutations, dico_ref, n, max_stagnation)
+
+        # Calculer le ratio de similarité entre le texte déchiffré et le texte clair
+        dico_text = dico_n_grammes(texte_dechiffre, n)
+        ratio = ngram_similarite(dico_text, dico_text_ref)
+        if ratio >= seuil:
+            succes += 1
+    return (succes / repetitions) * 100
+
+def evaluer_taux_reussite_tabou(message, texte_clair, nb_iter, dico_ref, n, repetitions, tabu_size, seuil):
+    """Retourne le taux de réussite (en %) du recuit simulé en comparant le texte déchiffré au texte clair"""
+    succes = 0
+    dico_text_ref = dico_n_grammes(texte_clair, n)
+    for rep in range(repetitions):
+        texte_dechiffre, _ , _ = recherche_tabou(message, nb_iter, dico_ref, n, tabu_size=100)
 
         # Calculer le ratio de similarité entre le texte déchiffré et le texte clair
         dico_text = dico_n_grammes(texte_dechiffre, n)
@@ -82,10 +111,14 @@ dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, n))
 cool_ratio = 0.6
 cool_time = 200
 max_stagnations = 150
+tabu_size = 370
+nb_iter = 460
 
 lengths = sorted(textes_chiffres.keys())
 rates_recuit = []
-rates_hill = []
+rates_hill= []
+rates_hill_opti= []
+rates_tabou = []
 
 for l in lengths:
     message_chiffre = textes_chiffres[l]
@@ -95,21 +128,33 @@ for l in lengths:
     rate_recuit = evaluer_taux_reussite_recuit(message_chiffre, texte_clair, nbPerm, dico_ngrams, n, cool_ratio,
             cool_time, repetitions, seuil
     )
+    # Évaluer pour le hill climbing opti
+    rate_hill_opti = evaluer_taux_reussite_hillClimbing_opti(
+        message_chiffre, texte_clair, nbPerm, dico_ngrams, n, max_stagnations, repetitions, seuil)
+    
     # Évaluer pour le hill climbing
     rate_hill = evaluer_taux_reussite_hillClimbing(
         message_chiffre, texte_clair, nbPerm, dico_ngrams, n, max_stagnations, repetitions, seuil)
+    #Evaluer pour le tabou
+    rate_tabou = evaluer_taux_reussite_tabou(message_chiffre, texte_clair, nb_iter, dico_ngrams, n, repetitions, tabu_size, seuil)
 
     rates_recuit.append(rate_recuit)
+    rates_hill_opti.append(rate_hill_opti)
     rates_hill.append(rate_hill)
+    rates_tabou.append(rate_tabou)
 
 #Affichage sous forme d'histogramme
 
+# Affichage sous forme d'histogramme avec Tabou inclus
+
 x = np.arange(len(lengths))
-width = 0.35
+width = 0.15  # Réduction de la largeur des barres pour caser les 3 méthodes
 
 plt.figure(figsize=(10, 6))
-rects1 = plt.bar(x - width / 2, rates_recuit, width, label='Recuit Simulé')
-rects2 = plt.bar(x + width / 2, rates_hill, width, label='Hill Climbing')
+rects1 = plt.bar(x - 1.5 * width, rates_hill, width, label='Hill Climbing')
+rects2 =plt.bar(x - 0.5 * width,  rates_hill_opti, width, label='Hill Climbing Optimisé')
+rects3 = plt.bar(x + 0.5 * width, rates_recuit, width, label='Recuit Simulé')
+rects4 =plt.bar(x + 1.5 * width, rates_tabou, width, label='Tabu search')
 
 plt.xlabel("Longueur du texte")
 plt.ylabel("Taux de réussite (%)")
@@ -117,21 +162,22 @@ plt.title("Taux de réussite en fonction de la longueur du texte")
 plt.xticks(x, [str(l) for l in lengths])
 plt.legend()
 
-
-#Ajouter les pourcentages sur chaque barre
+# Ajouter les pourcentages sur chaque barre
 def autolabel(rects):
+    """Affiche les valeurs au-dessus des barres"""
     for rect in rects:
         height = rect.get_height()
         plt.annotate(f'{height:.1f}%',
                      xy=(rect.get_x() + rect.get_width() / 2, height),
-                     xytext=(0, 3),  # Décalage vertical de 3 points
+                     xytext=(0, 3),
                      textcoords="offset points",
                      ha='center', va='bottom')
 
-
 autolabel(rects1)
 autolabel(rects2)
+autolabel(rects3)
+autolabel(rects4)
 
 plt.tight_layout()
-plt.show()
 plt.savefig("reussite")
+plt.show()

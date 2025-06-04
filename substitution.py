@@ -74,6 +74,13 @@ def modifier_cle(dicoP):
     new_dicoP[r1], new_dicoP[r2] = new_dicoP[r2], new_dicoP[r1]
     return new_dicoP
 
+def modifier_cle_et_mouvement(dicoP):
+    """Fait une permutation aléatoire et retourne aussi le mouvement effectué."""
+    new_dicoP = dicoP.copy()
+    r1, r2 = random.sample(alphabet, 2)
+    new_dicoP[r1], new_dicoP[r2] = new_dicoP[r2], new_dicoP[r1]
+    return new_dicoP, (r1, r2)
+
 
 def dechiffrer(message, key):
     """Déchiffre le message selon le dictionnaire de permutation"""
