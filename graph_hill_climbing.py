@@ -13,9 +13,22 @@ def evaluer_moyenne_scores(
     stagnations_testees=[200]
 ):
     """Évalue les scores moyens du Hill Climbing pour différentes stagnations et affiche un graphe unique par taille de texte."""
-    
+
+    # --- Textes clairs à utiliser pour le calcul des scores "idéaux"
+    textes_clairs = {
+        110: "ETTOUTLETEMPSQUELESVISITEURSRESTERENTENFACEELLESENDEGOISERENTLESVOILAQUISORTENTDITENFINLALEVAQUEILSFONTLETOUR",
+        509: "ELLESENFACHAITMAISNESENALLAITPASCHATOUILLEEAUFONDPARLESGROSMOTSQUILAFAISAIENTCRIERLESMAINSAUVENTREILARRIVAASONSECOURSUNEFEMMEMAIGREDONTLACOLEREBEGAYANTERESSEMBLAITAUNGLOUSSEMENTDEPOULEDAUTRESAULOINSURLESPORTESSEFFAROUCHAIENTDECONFIANCEMAINTENANTLECOLEETAITFERMEETOUTELAMARMAILLETRAINAITCETAITUNGROUILLEMENTDEPETITSETRESPIAULANTSEROULANTSEBATTANTTANDISQUELESPERESQUINETAIENTPASALESTAMINETRESTAIENTPARGROUPESDETROISOUQUATREACCROUPISSURLEURSTALONSCOMMEAUFONDDELAMINEFUMANTDESPIPESAVECDESPAROLESRARESALABRIDUNMUR",
+        1150: "DEPUISCINQJOURSQUILSTRAVAILLAIENTLAELLESONGEAITAUXCONTESDONTONAVAITBERCESONENFANCEACESHERSCHEUSESDUTEMPSJADISQUIBRULAIENTSOUSLETARTARETENPUNITIONDECHOSESQUONNOSAITPASREPETERSANSDOUTEELLEETAITTROPGRANDEMAINTENANTPOURCROIREDEPAREILLESBETISESMAISPOURTANTQUAURAITELLEFAITSIBRUSQUEMENTELLEAVAITVUSORTIRDUMURUNEFILLEROUGECOMMEUNPOELEAVECDESYEUXPAREILSADESTISONSCETTEIDEEREDOUBLAITSESSUEURSAURELAISAQUATREVINGTSMETRESDELATAILLEUNEAUTREHERSCHEUSEPRENAITLABERLINEETLAROULAITAQUATREVINGTSMETRESPLUSLOINJUSQUAUPIEDDUPLANINCLINEPOURQUELERECEVEURLEXPEDIATAVECCELLESQUIDESCENDAIENTDESVOIESDENHAUTFICHTRETUTEMETSATONAISEDITCETTEFEMMEUNEMAIGREVEUVEDETRENTEANSQUANDELLEAPERCUTCATHERINEENCHEMISEMOIJENEPEUXPASLESGALIBOTSDUPLANMEMBETENTAVECLEURSSALETESAHBIENREPLIQUALAJEUNEFILLEJEMENMOQUEDESHOMMESJESOUFFRETROPELLEREPARTITPOUSSANTUNEBERLINEVIDELEPISETAITQUEDANSCETTEVOIEDEFONDUNEAUTRECAUSESEJOIGNAITAUVOISINAGEDUTARTARETPOURRENDRELACHALEURINSOUTENABLEONCOTOYAITDANCIENSTRAVAUXUNEGALERIEABANDONNEEDEGASTONMARIETRESPROFONDEOUUNCOUPDEGRISOUDIXANSPLUSTOTAVAITINCENDIELAVEINEQUIBRULAITTOUJOURSDERRIERELECORROILEMURDARGILEBATILAETREPARECONTINUELLEMENTAFINDELIMITERLEDESASTRE",
+    }
+
     # Préparer le dictionnaire de fréquence pour le n-gramme choisi
     dico_ngrams_ref = {n_gramme: normaliser_dico(dico_n_grammes(texte_ref, n_gramme))}
+
+    # Calculer les scores des textes clairs pour les lignes horizontales
+    scores_clairs = {
+        taille: score(dico_ngrams_ref[n_gramme], texte, n_gramme)
+        for taille, texte in textes_clairs.items()
+    }
 
     resultats = []
 
@@ -36,7 +49,7 @@ def evaluer_moyenne_scores(
 
                 for _ in range(repetitions):
                     start_time = time.time()
-                    texte_dechiffre, score_init = hill_climbing(
+                    texte_dechiffre, score_init, _= hill_climbing(
                         message_chiffre,
                         nb_permutations,
                         dico_ngrams_ref[n_gramme],
@@ -69,7 +82,14 @@ def evaluer_moyenne_scores(
 
             # Tracer la courbe pour cette valeur de stagnation
             plt.plot(nb_permutations_list, moyennes_scores, marker='o', label=f"Stagnation max = {max_stagnation}")
-            
+
+        # Ajouter ligne horizontale pour le score du texte clair
+        if taille in scores_clairs:
+            plt.axhline(
+                y=scores_clairs[taille], color='green', linestyle='--', linewidth=2,
+                label='Score du texte clair'
+            )
+
         # Graphique global pour cette taille de texte
         min_perm = min(nb_permutations_list)
         max_perm = max(nb_permutations_list)
@@ -77,7 +97,7 @@ def evaluer_moyenne_scores(
         plt.xlabel("Nombre de permutations")
         plt.ylabel("Score moyen")
         plt.title(
-            f"Hill Climbing – Score moyen pour {taille} caractères | n-gramme = {n_gramme} | "
+            f"Hill Climbing classique– Score moyen pour {taille} caractères | n-gramme = {n_gramme} | "
             f"{repetitions} répétitions"
         )
         plt.grid(True)
@@ -87,7 +107,6 @@ def evaluer_moyenne_scores(
         filename = f"hillclimb_n{n_gramme}_taille{taille}_perm{min_perm}-{max_perm}.png"
         plt.savefig(filename)
         plt.show()
-
 
     return resultats
 
@@ -102,10 +121,10 @@ textes_chiffres = {
 texte_ref = file_to_str("germinal_nettoye")
 
 # --- Paramètres ---
-n_gramme_choisi = 4
+n_gramme_choisi = 2
 repetitions = 200
-nb_permutations_list = list(range(100, 2001, 100))  # exemple réduit
-stagnations_testees = [150,200, 250, 300]
+nb_permutations_list = list(range(100, 6000, 200))
+stagnations_testees = [100,200,300,400]
 
 # --- Exécution ---
 resultats = evaluer_moyenne_scores(
