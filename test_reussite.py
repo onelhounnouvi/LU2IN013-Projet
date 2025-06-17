@@ -5,179 +5,160 @@ from recuit_simule import *
 from substitution import *
 from tabou import *
 
-
 def ngram_similarite(dict1, dict2):
-    """Calcule la similarité entre deux textes à partir de leurs dictionnaires de n-grammes.
-    Utilise la somme des minima sur la somme des maxima (indice Jaccard)"""
-
-    # Ensemble de tous les n-grammes présents dans au moins l'un des deux dictionnaires
     all_ngrams = set(dict1.keys()) | set(dict2.keys())
     somme_min = 0
     somme_max = 0
-
     for gram in all_ngrams:
         freq1 = dict1.get(gram, 0)
         freq2 = dict2.get(gram, 0)
         somme_min += min(freq1, freq2)
         somme_max += max(freq1, freq2)
+    return 1.0 if somme_max == 0 else somme_min / somme_max
 
-    if somme_max == 0:
-        return 1.0  #Si les deux textes sont vides, on définit la similarité à 1.
+def caractere_similarite(texte1, texte2):
+    longueur = min(len(texte1), len(texte2))
+    if longueur == 0:
+        return 1.0
+    nb_identiques = sum(1 for a, b in zip(texte1[:longueur], texte2[:longueur]) if a == b)
+    return nb_identiques / longueur
 
-    return somme_min / somme_max
+def similarite_mixte(texte1, texte2, dict1, dict2, alpha=0.5):
+    sim_c = caractere_similarite(texte1, texte2)
+    sim_n = ngram_similarite(dict1, dict2)
+    return alpha * sim_c + (1 - alpha) * sim_n
 
-
-def evaluer_taux_reussite_recuit(message, texte_clair, nbPermutations, dico_ref, n, cool_ratio, cool_time, repetitions, seuil):
-    """Retourne le taux de réussite (en %) du recuit simulé en comparant le texte déchiffré au texte clair"""
+def evaluer_taux_reussite_recuit(message, texte_clair, nbPermutations, dico_ref, n, cool_ratio, cool_time, repetitions, seuil, alpha=0.4):
     succes = 0
-    dico_text_ref = dico_n_grammes(texte_clair, n)
-    for rep in range(repetitions):
+    ref_ngrams = dico_n_grammes(texte_clair, n)
+    for _ in range(repetitions):
         T_initial = calculer_temperature_initiale(message, dico_ref, n)
-        texte_dechiffre, _ , _ = recuit_simule(message, nbPermutations, dico_ref, n, cool_ratio, cool_time, T_initial)
-
-        # Calculer le ratio de similarité entre le texte déchiffré et le texte clair
-        dico_text = dico_n_grammes(texte_dechiffre, n)
-        ratio = ngram_similarite(dico_text, dico_text_ref)
+        texte_dechiffre, _, _ = recuit_simule(message, nbPermutations, dico_ref, n, cool_ratio, cool_time, T_initial)
+        test_ngrams = dico_n_grammes(texte_dechiffre, n)
+        ratio = similarite_mixte(texte_dechiffre, texte_clair, test_ngrams, ref_ngrams, alpha)
         if ratio >= seuil:
             succes += 1
     return (succes / repetitions) * 100
 
-def evaluer_taux_reussite_hillClimbing(message, texte_clair, nbPermutations, dico_ref, n, max_stagnation, repetitions, seuil):
-    """Retourne le taux de réussite (en %) du hill Climbing en comparant le texte déchiffré au texte clair"""
+def evaluer_taux_reussite_hillClimbing(message, texte_clair, nbPermutations, dico_ref, n, max_stagnation, repetitions, seuil, alpha=0.4):
     succes = 0
-    dico_text_ref = dico_n_grammes(texte_clair, n)
-    for rep in range(repetitions):
+    ref_ngrams = dico_n_grammes(texte_clair, n)
+    for _ in range(repetitions):
         texte_dechiffre, _, _ = hill_climbing(message, nbPermutations, dico_ref, n, max_stagnation)
-
-        # Calculer le ratio de similarité entre le texte déchiffré et le texte clair
-        dico_text = dico_n_grammes(texte_dechiffre, n)
-        ratio = ngram_similarite(dico_text, dico_text_ref)
+        test_ngrams = dico_n_grammes(texte_dechiffre, n)
+        ratio = similarite_mixte(texte_dechiffre, texte_clair, test_ngrams, ref_ngrams, alpha)
         if ratio >= seuil:
             succes += 1
     return (succes / repetitions) * 100
 
-def evaluer_taux_reussite_hillClimbing_opti(message, texte_clair, nbPermutations, dico_ref, n, max_stagnation, repetitions, seuil):
-    """Retourne le taux de réussite (en %) du hill Climbing en comparant le texte déchiffré au texte clair"""
+def evaluer_taux_reussite_hillClimbing_opti(message, texte_clair, nbPermutations, dico_ref, n, max_stagnation, repetitions, seuil, alpha=0.4):
     succes = 0
-    dico_text_ref = dico_n_grammes(texte_clair, n)
-    for rep in range(repetitions):
+    ref_ngrams = dico_n_grammes(texte_clair, n)
+    for _ in range(repetitions):
         texte_dechiffre, _, _ = hill_climbing_optimise(message, nbPermutations, dico_ref, n, max_stagnation)
-
-        # Calculer le ratio de similarité entre le texte déchiffré et le texte clair
-        dico_text = dico_n_grammes(texte_dechiffre, n)
-        ratio = ngram_similarite(dico_text, dico_text_ref)
+        test_ngrams = dico_n_grammes(texte_dechiffre, n)
+        ratio = similarite_mixte(texte_dechiffre, texte_clair, test_ngrams, ref_ngrams, alpha)
         if ratio >= seuil:
             succes += 1
     return (succes / repetitions) * 100
 
-def evaluer_taux_reussite_tabou(message, texte_clair, nb_iter, dico_ref, n, repetitions, tabu_size, seuil):
-    """Retourne le taux de réussite (en %) du recuit simulé en comparant le texte déchiffré au texte clair"""
+def evaluer_taux_reussite_tabou(message, texte_clair, nb_iter, dico_ref, n, repetitions, tabu_size, seuil, alpha=0.4):
     succes = 0
-    dico_text_ref = dico_n_grammes(texte_clair, n)
-    for rep in range(repetitions):
-        texte_dechiffre, _ , _ = recherche_tabou(message, nb_iter, dico_ref, n, tabu_size=100)
-
-        # Calculer le ratio de similarité entre le texte déchiffré et le texte clair
-        dico_text = dico_n_grammes(texte_dechiffre, n)
-        ratio = ngram_similarite(dico_text, dico_text_ref)
+    ref_ngrams = dico_n_grammes(texte_clair, n)
+    for _ in range(repetitions):
+        texte_dechiffre, _, _ = recherche_tabou(message, nb_iter, dico_ref, n, tabu_size)
+        test_ngrams = dico_n_grammes(texte_dechiffre, n)
+        ratio = similarite_mixte(texte_dechiffre, texte_clair, test_ngrams, ref_ngrams, alpha)
         if ratio >= seuil:
             succes += 1
     return (succes / repetitions) * 100
 
+# Chargement des textes
 textes_chiffres = {
     110: file_to_str("chiffres/chiffre_germinal_20_110_1"),
-    201: file_to_str("chiffres/chiffre_germinal_6_201_1"),
-    401: file_to_str("chiffres/chiffre_germinal_1_401_1"),
-    509: file_to_str("chiffres/chiffre_germinal_22_509_1"),
-    707: file_to_str("chiffres/chiffre_germinal_10_707_3"),
-    1150: file_to_str("chiffres/chiffre_germinal_58_1150_2")
+    205: file_to_str("chiffres/chiffre_germinal_5_205_1"),
+    318: file_to_str("chiffres/chiffre_germinal_3_318_1"),
+    509: file_to_str("chiffres/chiffre_germinal_22_509_1")
 }
 
 textes_clairs = {
     110: "ETTOUTLETEMPSQUELESVISITEURSRESTERENTENFACEELLESENDEGOISERENTLESVOILAQUISORTENTDITENFINLALEVAQUEILSFONTLETOUR",
-    201: "SURLESDALLESDEFONTELESCHARGEURSROULAIENTVIOLEMMENTDESBERLINESPLEINESUNEODEURDECAVESUINTAITDESMURSUNEFRAICHEURSALPETREEOUPASSAIENTDESSOUFFLESCHAUDSVENUSDELECURIEVOISINEQUATREGALERIESSOUVRAIENTLABEANTES",
-    401: "CEUXCIDESBATTERIESDECENTCHEMINEESPLANTEESOBLIQUEMENTALIGNAIENTDESRAMPESDEFLAMMESROUGESTANDISQUELESDEUXTOURSPLUSAGAUCHEBRULAIENTTOUTESBLEUESENPLEINCIELCOMMEDESTORCHESGEANTESCETAITDUNETRISTESSEDINCENDIEILNYAVAITDAUTRESLEVERSDASTRESALHORIZONMENACANTQUECESFEUXNOCTURNESDESPAYSDELAHOUILLEETDUFERVOUSETESPEUTETREDELABELGIQUEREPRITDERRIEREETIENNELECHARRETIERQUIETAITREVENUCETTEFOISILNAMENAITQUETROISBERLINES",
-    509: "ELLESENFACHAITMAISNESENALLAITPASCHATOUILLEEAUFONDPARLESGROSMOTSQUILAFAISAIENTCRIERLESMAINSAUVENTREILARRIVAASONSECOURSUNEFEMMEMAIGREDONTLACOLEREBEGAYANTERESSEMBLAITAUNGLOUSSEMENTDEPOULEDAUTRESAULOINSURLESPORTESSEFFAROUCHAIENTDECONFIANCEMAINTENANTLECOLEETAITFERMEETOUTELAMARMAILLETRAINAITCETAITUNGROUILLEMENTDEPETITSETRESPIAULANTSEROULANTSEBATTANTTANDISQUELESPERESQUINETAIENTPASALESTAMINETRESTAIENTPARGROUPESDETROISOUQUATREACCROUPISSURLEURSTALONSCOMMEAUFONDDELAMINEFUMANTDESPIPESAVECDESPAROLESRARESALABRIDUNMUR",
-    707: "UNEHEUREETDEMIEAHUNEPROPREJOURNEENOUSNAURONSPASCINQUANTESOUSJEMENVAISCAMEDEGOUTEBIENQUILYEUTENCOREUNEDEMIHEUREDETRAVAILILSERHABILLALESAUTRESLIMITERENTLAVUESEULEDELATAILLELESJETAITHORSDEUXCOMMELAHERSCHEUSESETAITREMISEAUROULAGEILSLAPPELERENTENSIRRITANTDESONZELESILECHARBONAVAITDESPIEDSILSORTIRAITTOUTSEULETLESSIXLEURSOUTILSSOUSLEBRASPARTIRENTAYANTAREFAIRELESDEUXKILOMETRESRETOURNANTAUPUITSPARLAROUTEDUMATINDANSLACHEMINEECATHERINEETETIENNESATTARDERENTTANDISQUELESHAVEURSGLISSAIENTJUSQUENBASCETAITUNERENCONTRELAPETITELYDIEARRETEEAUMILIEUDUNEVOIEPOURLESLAISSERPASSERETQUILEURRACONTAITUNEDISPARITIONDELAMOUQUETTEPRISEDUNTELSAIGNEMENTDENEZQUEDEPUISUNEHEUREELLEETAITALLEESETREMPERLAFIGUREQUELQUEPARTONNESAVAITPASOU",
-    1150: "DEPUISCINQJOURSQUILSTRAVAILLAIENTLAELLESONGEAITAUXCONTESDONTONAVAITBERCESONENFANCEACESHERSCHEUSESDUTEMPSJADISQUIBRULAIENTSOUSLETARTARETENPUNITIONDECHOSESQUONNOSAITPASREPETERSANSDOUTEELLEETAITTROPGRANDEMAINTENANTPOURCROIREDEPAREILLESBETISESMAISPOURTANTQUAURAITELLEFAITSIBRUSQUEMENTELLEAVAITVUSORTIRDUMURUNEFILLEROUGECOMMEUNPOELEAVECDESYEUXPAREILSADESTISONSCETTEIDEEREDOUBLAITSESSUEURSAURELAISAQUATREVINGTSMETRESDELATAILLEUNEAUTREHERSCHEUSEPRENAITLABERLINEETLAROULAITAQUATREVINGTSMETRESPLUSLOINJUSQUAUPIEDDUPLANINCLINEPOURQUELERECEVEURLEXPEDIATAVECCELLESQUIDESCENDAIENTDESVOIESDENHAUTFICHTRETUTEMETSATONAISEDITCETTEFEMMEUNEMAIGREVEUVEDETRENTEANSQUANDELLEAPERCUTCATHERINEENCHEMISEMOIJENEPEUXPASLESGALIBOTSDUPLANMEMBETENTAVECLEURSSALETESAHBIENREPLIQUALAJEUNEFILLEJEMENMOQUEDESHOMMESJESOUFFRETROPELLEREPARTITPOUSSANTUNEBERLINEVIDELEPISETAITQUEDANSCETTEVOIEDEFONDUNEAUTRECAUSESEJOIGNAITAUVOISINAGEDUTARTARETPOURRENDRELACHALEURINSOUTENABLEONCOTOYAITDANCIENSTRAVAUXUNEGALERIEABANDONNEEDEGASTONMARIETRESPROFONDEOUUNCOUPDEGRISOUDIXANSPLUSTOTAVAITINCENDIELAVEINEQUIBRULAITTOUJOURSDERRIERELECORROILEMURDARGILEBATILAETREPARECONTINUELLEMENTAFINDELIMITERLEDESASTRE",
-    }
+    205: "ETMAHEUSEDESESPERAITENCOREDELAMALCHANCEVOILAQUILPERDAITUNEDESESHERSCHEUSESSANSPOUVOIRLAREMPLACERIMMEDIATEMENTILTRAVAILLAITAUMARCHANDAGEILSETAIENTQUATREHAVEURSASSOCIESDANSSATAILLELUIBACHARIELEVAQUEETCHAVAL ",
+    318: "ALZIRELESYEUXGRANDSOUVERTSREGARDAITTOUJOURSLESDEUXMIOCHESLENOREETHENRIAUXBRASLUNDELAUTRENAVAIENTPASREMUERESPIRANTDUMEMEPETITSOUFFLEMALGRELEVACARMECATHERINEDONNEMOILACHANDELLECRIAMAHEUELLEFINISSAITDEBOUTONNERSAVESTEELLEPORTALACHANDELLEDANSLECABINETLAISSANTSESFRERESCHERCHERLEURSVETEMENTSAUPEUDECLARTEQUIVENAITDELAPORTE",
+    509: "ELLESENFACHAITMAISNESENALLAITPASCHATOUILLEEAUFONDPARLESGROSMOTSQUILAFAISAIENTCRIERLESMAINSAUVENTREILARRIVAASONSECOURSUNEFEMMEMAIGREDONTLACOLEREBEGAYANTERESSEMBLAITAUNGLOUSSEMENTDEPOULEDAUTRESAULOINSURLESPORTESSEFFAROUCHAIENTDECONFIANCEMAINTENANTLECOLEETAITFERMEETOUTELAMARMAILLETRAINAITCETAITUNGROUILLEMENTDEPETITSETRESPIAULANTSEROULANTSEBATTANTTANDISQUELESPERESQUINETAIENTPASALESTAMINETRESTAIENTPARGROUPESDETROISOUQUATREACCROUPISSURLEURSTALONSCOMMEAUFONDDELAMINEFUMANTDESPIPESAVECDESPAROLESRARESALABRIDUNMUR"
+}
 
-repetitions = 150
-seuil = 0.9  #On considère que l'exécution est réussie si la similarité est >= 90%
-nbPerm = 6000
+# Paramètres d'évaluation
+repetitions = 500
+nbPerm = 8000
 corpus_ref = file_to_str("germinal_nettoye")
-n = 4
-dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, n))
-cool_ratio = 0.6
-cool_time = 200
-max_stagnations = 150
-tabu_size = 370
-nb_iter = 460
+n_gramme = 3
+dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, n_gramme))
+cool_ratio = 0.3
+cool_time = 1000
+max_stagnations_opti = 300
+max_stagnations_classique = 400
+tabu_size = 460
+nb_iter = 370
 
-lengths = sorted(textes_chiffres.keys())
-rates_recuit = []
-rates_hill= []
-rates_hill_opti= []
-rates_tabou = []
+alpha_mixte = 0.6
+seuil_mixte = 0.9
 
-for l in lengths:
+# Initialisation des listes de résultats
+rates_recuit_mixte = []
+rates_hill_mixte = []
+rates_hill_opti_mixte = []
+rates_tabou_mixte = []
+
+# Traitement pour chaque longueur
+for i, l in enumerate(sorted(textes_chiffres.keys())):
     message_chiffre = textes_chiffres[l]
     texte_clair = textes_clairs[l]
 
-    # Évaluer pour le recuit simulé
-    rate_recuit = evaluer_taux_reussite_recuit(message_chiffre, texte_clair, nbPerm, dico_ngrams, n, cool_ratio,
-            cool_time, repetitions, seuil
+    taux_recuit = evaluer_taux_reussite_recuit(
+        message_chiffre, texte_clair, nbPerm, dico_ngrams, n_gramme,
+        cool_ratio, cool_time, repetitions, seuil_mixte, alpha=alpha_mixte
     )
-    # Évaluer pour le hill climbing opti
-    rate_hill_opti = evaluer_taux_reussite_hillClimbing_opti(
-        message_chiffre, texte_clair, nbPerm, dico_ngrams, n, max_stagnations, repetitions, seuil)
-    
-    # Évaluer pour le hill climbing
-    rate_hill = evaluer_taux_reussite_hillClimbing(
-        message_chiffre, texte_clair, nbPerm, dico_ngrams, n, max_stagnations, repetitions, seuil)
-    #Evaluer pour le tabou
-    rate_tabou = evaluer_taux_reussite_tabou(message_chiffre, texte_clair, nb_iter, dico_ngrams, n, repetitions, tabu_size, seuil)
 
-    rates_recuit.append(rate_recuit)
-    rates_hill_opti.append(rate_hill_opti)
-    rates_hill.append(rate_hill)
-    rates_tabou.append(rate_tabou)
+    taux_hill = evaluer_taux_reussite_hillClimbing(
+        message_chiffre, texte_clair, nbPerm, dico_ngrams, n_gramme,
+        max_stagnations_classique, repetitions, seuil_mixte, alpha=alpha_mixte
+    )
 
-#Affichage sous forme d'histogramme
+    taux_hill_opti = evaluer_taux_reussite_hillClimbing_opti(
+        message_chiffre, texte_clair, nbPerm, dico_ngrams, n_gramme,
+        max_stagnations_opti, repetitions, seuil_mixte, alpha=alpha_mixte
+    )
 
-# Affichage sous forme d'histogramme avec Tabou inclus
+    taux_tabou = evaluer_taux_reussite_tabou(
+        message_chiffre, texte_clair, nb_iter, dico_ngrams, n_gramme,
+        repetitions, tabu_size, seuil_mixte, alpha=alpha_mixte
+    )
 
-x = np.arange(len(lengths))
-width = 0.15  # Réduction de la largeur des barres pour caser les 3 méthodes
+    # Stockage des résultats
+    rates_recuit_mixte.append(taux_recuit)
+    rates_hill_mixte.append(taux_hill)
+    rates_hill_opti_mixte.append(taux_hill_opti)
+    rates_tabou_mixte.append(taux_tabou)
 
-plt.figure(figsize=(10, 6))
-rects1 = plt.bar(x - 1.5 * width, rates_hill, width, label='Hill Climbing')
-rects2 =plt.bar(x - 0.5 * width,  rates_hill_opti, width, label='Hill Climbing Optimisé')
-rects3 = plt.bar(x + 0.5 * width, rates_recuit, width, label='Recuit Simulé')
-rects4 =plt.bar(x + 1.5 * width, rates_tabou, width, label='Tabu search')
+    if i == 0: 
+        seuil_mixte = 0.97
 
-plt.xlabel("Longueur du texte")
+# --- Affichage graphique ---
+x = np.arange(len(textes_chiffres))
+width = 0.15
+
+plt.figure(figsize=(12, 6))
+plt.bar(x - 1.5 * width, rates_hill_mixte, width, label="Hill Climbing")
+plt.bar(x - 0.5 * width, rates_hill_opti_mixte, width, label="Hill Climbing optimisé")
+plt.bar(x + 0.5 * width, rates_recuit_mixte, width, label="Recuit simulé")
+plt.bar(x + 1.5 * width, rates_tabou_mixte, width, label="Recherche Tabou")
+plt.xticks(x, sorted(textes_chiffres.keys()))
+plt.xlabel("Longueur du texte chiffré")
 plt.ylabel("Taux de réussite (%)")
-plt.title("Taux de réussite en fonction de la longueur du texte")
-plt.xticks(x, [str(l) for l in lengths])
+plt.title(f"Taux de réussite (similarité mixte α={alpha_mixte}, n-gramme = {n_gramme})")
 plt.legend()
-
-# Ajouter les pourcentages sur chaque barre
-def autolabel(rects):
-    """Affiche les valeurs au-dessus des barres"""
-    for rect in rects:
-        height = rect.get_height()
-        plt.annotate(f'{height:.1f}%',
-                     xy=(rect.get_x() + rect.get_width() / 2, height),
-                     xytext=(0, 3),
-                     textcoords="offset points",
-                     ha='center', va='bottom')
-
-autolabel(rects1)
-autolabel(rects2)
-autolabel(rects3)
-autolabel(rects4)
-
+plt.grid(True, axis='y', linestyle='--', alpha=0.5)
 plt.tight_layout()
-plt.savefig("reussite")
-plt.show()
+plt.savefig(f"taux_reussite_mixte_ngramme_{n_gramme}.png")
+plt.close()
