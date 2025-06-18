@@ -89,7 +89,7 @@ textes_clairs = {
 }
 
 # Paramètres d'évaluation
-repetitions = 500
+repetitions =1000
 nbPerm = 8000
 corpus_ref = file_to_str("germinal_nettoye")
 n_gramme = 3
@@ -101,8 +101,8 @@ max_stagnations_classique = 400
 tabu_size = 460
 nb_iter = 370
 
-alpha_mixte = 0.6
-seuil_mixte = 0.9
+alpha_mixte = 0.4
+seuil_mixte = 0.84
 
 # Initialisation des listes de résultats
 rates_recuit_mixte = []
