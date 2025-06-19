@@ -2,73 +2,32 @@ import numpy as np
 from matplotlib import pyplot as plt
 from hill_climbing import *
 from recuit_simule import *
-from substitution import *
 from tabou import *
 
-def ngram_similarite(dict1, dict2):
-    all_ngrams = set(dict1.keys()) | set(dict2.keys())
-    somme_min = 0
-    somme_max = 0
-    for gram in all_ngrams:
-        freq1 = dict1.get(gram, 0)
-        freq2 = dict2.get(gram, 0)
-        somme_min += min(freq1, freq2)
-        somme_max += max(freq1, freq2)
-    return 1.0 if somme_max == 0 else somme_min / somme_max
+corpus_ref = file_to_str("germinal_nettoye")
+FREQS_LETTRES = normaliser_dico(dico_n_grammes(corpus_ref, 1))
 
-def caractere_similarite(texte1, texte2):
-    longueur = min(len(texte1), len(texte2))
-    if longueur == 0:
-        return 1.0
-    nb_identiques = sum(1 for a, b in zip(texte1[:longueur], texte2[:longueur]) if a == b)
-    return nb_identiques / longueur
+def taux_comprehension(dico_trouve, dico_cle):
+    """Calcule le taux de compréhension (entre 0 et 1) en prenant en compte le dictionnaire de chiffrement
+    et celui trouvé par cryptanalyse tout en pondérant par la fréquence d'apparition de chaque lettre en français."""
 
-def similarite_mixte(texte1, texte2, dict1, dict2, alpha=0.5):
-    sim_c = caractere_similarite(texte1, texte2)
-    sim_n = ngram_similarite(dict1, dict2)
-    return alpha * sim_c + (1 - alpha) * sim_n
+    correct_weight = 0.0
+    for lettre, substitution_correcte in dico_cle.items():
+        poids = FREQS_LETTRES.get(lettre, 0)
+        if dico_trouve.get(lettre, "") == substitution_correcte:
+            correct_weight += poids
 
-def evaluer_taux_reussite_recuit(message, texte_clair, nbPermutations, dico_ref, n, cool_ratio, cool_time, repetitions, seuil, alpha=0.4):
+    return correct_weight  #La division par le poids total n'est pas nécessaire, car les fréquences sont normalisées
+
+
+def evaluer_taux_reussite(metaheur_func, message, dico_clair, repetitions, seuil, **params):
+    """Fonction générique d'évaluation du taux de réussite d'une méthode de cryptanalyse.
+        **params: paramètres spécifiques pour la fonction de cryptanalyse
+    """
     succes = 0
-    ref_ngrams = dico_n_grammes(texte_clair, n)
     for _ in range(repetitions):
-        T_initial = calculer_temperature_initiale(message, dico_ref, n)
-        texte_dechiffre, _, _ = recuit_simule(message, nbPermutations, dico_ref, n, cool_ratio, cool_time, T_initial)
-        test_ngrams = dico_n_grammes(texte_dechiffre, n)
-        ratio = similarite_mixte(texte_dechiffre, texte_clair, test_ngrams, ref_ngrams, alpha)
-        if ratio >= seuil:
-            succes += 1
-    return (succes / repetitions) * 100
-
-def evaluer_taux_reussite_hillClimbing(message, texte_clair, nbPermutations, dico_ref, n, max_stagnation, repetitions, seuil, alpha=0.4):
-    succes = 0
-    ref_ngrams = dico_n_grammes(texte_clair, n)
-    for _ in range(repetitions):
-        texte_dechiffre, _, _ = hill_climbing(message, nbPermutations, dico_ref, n, max_stagnation)
-        test_ngrams = dico_n_grammes(texte_dechiffre, n)
-        ratio = similarite_mixte(texte_dechiffre, texte_clair, test_ngrams, ref_ngrams, alpha)
-        if ratio >= seuil:
-            succes += 1
-    return (succes / repetitions) * 100
-
-def evaluer_taux_reussite_hillClimbing_opti(message, texte_clair, nbPermutations, dico_ref, n, max_stagnation, repetitions, seuil, alpha=0.4):
-    succes = 0
-    ref_ngrams = dico_n_grammes(texte_clair, n)
-    for _ in range(repetitions):
-        texte_dechiffre, _, _ = hill_climbing_optimise(message, nbPermutations, dico_ref, n, max_stagnation)
-        test_ngrams = dico_n_grammes(texte_dechiffre, n)
-        ratio = similarite_mixte(texte_dechiffre, texte_clair, test_ngrams, ref_ngrams, alpha)
-        if ratio >= seuil:
-            succes += 1
-    return (succes / repetitions) * 100
-
-def evaluer_taux_reussite_tabou(message, texte_clair, nb_iter, dico_ref, n, repetitions, tabu_size, seuil, alpha=0.4):
-    succes = 0
-    ref_ngrams = dico_n_grammes(texte_clair, n)
-    for _ in range(repetitions):
-        texte_dechiffre, _, _ = recherche_tabou(message, nb_iter, dico_ref, n, tabu_size)
-        test_ngrams = dico_n_grammes(texte_dechiffre, n)
-        ratio = similarite_mixte(texte_dechiffre, texte_clair, test_ngrams, ref_ngrams, alpha)
+        _,_,_,dico_trouve = metaheur_func(message, **params)
+        ratio = taux_comprehension(dico_trouve, dico_clair)
         if ratio >= seuil:
             succes += 1
     return (succes / repetitions) * 100
@@ -81,84 +40,103 @@ textes_chiffres = {
     509: file_to_str("chiffres/chiffre_germinal_22_509_1")
 }
 
-textes_clairs = {
-    110: "ETTOUTLETEMPSQUELESVISITEURSRESTERENTENFACEELLESENDEGOISERENTLESVOILAQUISORTENTDITENFINLALEVAQUEILSFONTLETOUR",
-    205: "ETMAHEUSEDESESPERAITENCOREDELAMALCHANCEVOILAQUILPERDAITUNEDESESHERSCHEUSESSANSPOUVOIRLAREMPLACERIMMEDIATEMENTILTRAVAILLAITAUMARCHANDAGEILSETAIENTQUATREHAVEURSASSOCIESDANSSATAILLELUIBACHARIELEVAQUEETCHAVAL ",
-    318: "ALZIRELESYEUXGRANDSOUVERTSREGARDAITTOUJOURSLESDEUXMIOCHESLENOREETHENRIAUXBRASLUNDELAUTRENAVAIENTPASREMUERESPIRANTDUMEMEPETITSOUFFLEMALGRELEVACARMECATHERINEDONNEMOILACHANDELLECRIAMAHEUELLEFINISSAITDEBOUTONNERSAVESTEELLEPORTALACHANDELLEDANSLECABINETLAISSANTSESFRERESCHERCHERLEURSVETEMENTSAUPEUDECLARTEQUIVENAITDELAPORTE",
-    509: "ELLESENFACHAITMAISNESENALLAITPASCHATOUILLEEAUFONDPARLESGROSMOTSQUILAFAISAIENTCRIERLESMAINSAUVENTREILARRIVAASONSECOURSUNEFEMMEMAIGREDONTLACOLEREBEGAYANTERESSEMBLAITAUNGLOUSSEMENTDEPOULEDAUTRESAULOINSURLESPORTESSEFFAROUCHAIENTDECONFIANCEMAINTENANTLECOLEETAITFERMEETOUTELAMARMAILLETRAINAITCETAITUNGROUILLEMENTDEPETITSETRESPIAULANTSEROULANTSEBATTANTTANDISQUELESPERESQUINETAIENTPASALESTAMINETRESTAIENTPARGROUPESDETROISOUQUATREACCROUPISSURLEURSTALONSCOMMEAUFONDDELAMINEFUMANTDESPIPESAVECDESPAROLESRARESALABRIDUNMUR"
+dicos_clairs = {
+    110: {'A': 'A', 'B': 'B', 'C': 'C', 'D': 'X', 'E': 'L', 'F': 'H', 'G': 'K', 'H': 'H', 'I': 'V', 'J': 'J', 'K': 'K', 'L': 'S', 'M': 'P', 'N': 'B', 'O': 'M', 'P': 'O', 'Q': 'E', 'R': 'R', 'S': 'Y', 'T': 'D', 'U': 'N', 'V': 'W', 'W': 'W', 'X': 'X', 'Y': 'Y', 'Z': 'Z'},
+    205: {'A': 'T', 'B': 'B', 'C': 'D', 'D': 'H', 'E': 'Z', 'F': 'F', 'G': 'O', 'H': 'U', 'I': 'F', 'J': 'J', 'K': 'K', 'L': 'P', 'M': 'X', 'N': 'C', 'O': 'N', 'P': 'L', 'Q': 'V', 'R': 'Y', 'S': 'K', 'T': 'J', 'U': 'B', 'V': 'M', 'W': 'W', 'X': 'X', 'Y': 'Y', 'Z': 'I'},
+    318: {'A': 'N', 'B': 'R', 'C': 'B', 'D': 'C', 'E': 'T', 'F': 'V', 'G': 'X', 'H': 'Q', 'I': 'M', 'J': 'A', 'K': 'K', 'L': 'D', 'M': 'L', 'N': 'J', 'O': 'S', 'P': 'Y', 'Q': 'E', 'R': 'U', 'S': 'F', 'T': 'I', 'U': 'W', 'V': 'H', 'W': 'W', 'X': 'Z', 'Y': 'G', 'Z': 'O'},
+    509: {'A': 'T', 'B': 'X', 'C': 'G', 'D': 'Z', 'E': 'B', 'F': 'D', 'G': 'A', 'H': 'I', 'I': 'R', 'J': 'J', 'K': 'K', 'L': 'Y', 'M': 'Q', 'N': 'W', 'O': 'U', 'P': 'K', 'Q': 'E', 'R': 'V', 'S': 'O', 'T': 'C', 'U': 'J', 'V': 'P', 'W': 'W', 'X': 'X', 'Y': 'S', 'Z': 'Z'}
 }
 
-# Paramètres d'évaluation
-repetitions =1000
+# --- Paramètres globaux ---
+repetitions = 500
 nbPerm = 8000
-corpus_ref = file_to_str("germinal_nettoye")
+seuil = 0.9
+
+# --- Paramètres optimaux
 n_gramme = 3
-dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, n_gramme))
-cool_ratio = 0.3
-cool_time = 1000
-max_stagnations_opti = 300
-max_stagnations_classique = 400
-tabu_size = 460
-nb_iter = 370
+max_stagnation_classique = 400
+max_stagnation_opt = 300
+cool_ratio = 0.75
+cool_time = 200
+tabu_nb_iter = 140
 
-alpha_mixte = 0.4
-seuil_mixte = 0.84
+# --- Listes de stockage des taux de réussite ---
+rates_hc = []
+rates_hco = []
+rates_rs = []
+rates_tb = []
 
-# Initialisation des listes de résultats
-rates_recuit_mixte = []
-rates_hill_mixte = []
-rates_hill_opti_mixte = []
-rates_tabou_mixte = []
+# Avant la boucle principale
+dico_ref = normaliser_dico(dico_n_grammes(corpus_ref, n_gramme))
 
-# Traitement pour chaque longueur
-for i, l in enumerate(sorted(textes_chiffres.keys())):
-    message_chiffre = textes_chiffres[l]
-    texte_clair = textes_clairs[l]
+# --- Boucle sur chaque taille de texte ---
+for taille, msg_chiffre in textes_chiffres.items():
+    print(f"Sur texte {taille}")
 
-    taux_recuit = evaluer_taux_reussite_recuit(
-        message_chiffre, texte_clair, nbPerm, dico_ngrams, n_gramme,
-        cool_ratio, cool_time, repetitions, seuil_mixte, alpha=alpha_mixte
+    if taille == 110:
+        n_gramme_hc = 2
+        dico_ref_hc = normaliser_dico(dico_n_grammes(corpus_ref, n_gramme_hc))
+        tabu_nb_iter = 150
+    else:
+        n_gramme_hc = n_gramme
+        dico_ref_hc = dico_ref
+        tabu_nb_iter = 140
+
+    # Hill Climbing Classique
+    print("Hill Climbing Classique")
+    taux_hc = evaluer_taux_reussite(
+        hill_climbing,
+        message=msg_chiffre, dico_clair=dicos_clairs[taille], repetitions=repetitions,
+        seuil=seuil, nbPermutations=nbPerm, dico_ref=dico_ref_hc, n=n_gramme_hc, max_stagnation=max_stagnation_classique
     )
+    rates_hc.append(taux_hc)
 
-    taux_hill = evaluer_taux_reussite_hillClimbing(
-        message_chiffre, texte_clair, nbPerm, dico_ngrams, n_gramme,
-        max_stagnations_classique, repetitions, seuil_mixte, alpha=alpha_mixte
+    # Hill Climbing Optimisé
+    print("Hill Climbing Optimisé")
+    taux_hco = evaluer_taux_reussite(
+        hill_climbing_optimise,
+        message=msg_chiffre, dico_clair=dicos_clairs[taille], repetitions=repetitions, seuil=seuil,
+        nbPermutations=nbPerm, dico_ref=dico_ref_hc, n=n_gramme_hc, max_stagnation=max_stagnation_opt
     )
+    rates_hco.append(taux_hco)
 
-    taux_hill_opti = evaluer_taux_reussite_hillClimbing_opti(
-        message_chiffre, texte_clair, nbPerm, dico_ngrams, n_gramme,
-        max_stagnations_opti, repetitions, seuil_mixte, alpha=alpha_mixte
+    # Recuit Simulé
+    print("Recuit simulé")
+    t_init = calculer_temperature_initiale(msg_chiffre, dico_ref, n_gramme)
+    taux_rs = evaluer_taux_reussite(
+        recuit_simule,
+        message=msg_chiffre, dico_clair=dicos_clairs[taille], repetitions=repetitions, seuil=seuil,
+        nbPermutations=nbPerm, dico_ref=dico_ref, n=n_gramme, cool_ratio=cool_ratio, cool_time=cool_time,
+        t_initial=t_init
     )
+    rates_rs.append(taux_rs)
 
-    taux_tabou = evaluer_taux_reussite_tabou(
-        message_chiffre, texte_clair, nb_iter, dico_ngrams, n_gramme,
-        repetitions, tabu_size, seuil_mixte, alpha=alpha_mixte
+    # Recherche Tabou
+    print("Recherche Tabou")
+    taux_tb = evaluer_taux_reussite(
+        recherche_tabou,
+        message=msg_chiffre, dico_clair=dicos_clairs[taille], repetitions=repetitions, seuil=seuil,
+        nb_iter=tabu_nb_iter, dico_ref=dico_ref, n=n_gramme
     )
-
-    # Stockage des résultats
-    rates_recuit_mixte.append(taux_recuit)
-    rates_hill_mixte.append(taux_hill)
-    rates_hill_opti_mixte.append(taux_hill_opti)
-    rates_tabou_mixte.append(taux_tabou)
-
-    if i == 0: 
-        seuil_mixte = 0.97
+    rates_tb.append(taux_tb)
 
 # --- Affichage graphique ---
-x = np.arange(len(textes_chiffres))
+x = np.arange(len(rates_hc))
 width = 0.15
 
 plt.figure(figsize=(12, 6))
-plt.bar(x - 1.5 * width, rates_hill_mixte, width, label="Hill Climbing")
-plt.bar(x - 0.5 * width, rates_hill_opti_mixte, width, label="Hill Climbing optimisé")
-plt.bar(x + 0.5 * width, rates_recuit_mixte, width, label="Recuit simulé")
-plt.bar(x + 1.5 * width, rates_tabou_mixte, width, label="Recherche Tabou")
+plt.bar(x - 1.5 * width, rates_hc, width, label="Hill Climbing")
+plt.bar(x - 0.5 * width, rates_hco, width, label="Hill Climbing optimisé")
+plt.bar(x + 0.5 * width, rates_rs, width, label="Recuit simulé")
+plt.bar(x + 1.5 * width, rates_tb, width, label="Recherche tabou")
+
 plt.xticks(x, sorted(textes_chiffres.keys()))
 plt.xlabel("Longueur du texte chiffré")
 plt.ylabel("Taux de réussite (%)")
-plt.title(f"Taux de réussite (similarité mixte α={alpha_mixte}, n-gramme = {n_gramme})")
+plt.title(f"Taux de réussite")
 plt.legend()
-plt.grid(True, axis='y', linestyle='--', alpha=0.5)
+plt.grid(True, axis='y', linestyle='--')
 plt.tight_layout()
-plt.savefig(f"taux_reussite_mixte_ngramme_{n_gramme}.png")
+plt.savefig(f"taux_reussite.png")
+print("Fichier sauvegardé")
 plt.close()

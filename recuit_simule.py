@@ -13,7 +13,7 @@ def calculer_temperature_initiale(message, dico_ref, n):
     T_initial = 10 * (sum(deltas) / len(deltas))
     return T_initial
 
-def recuit_simule(message, nbPermutations, dico_ref, n, cool_ratio, cool_time, T_init):
+def recuit_simule(message, nbPermutations, dico_ref, n, cool_ratio, cool_time, t_initial):
     """Applique l'algorithme du recuit simulé pour cryptanalyser le texte chiffré"""
     dico_perm = dico_permutation_alea()  #Génère une permutation aléatoire
     res = dechiffrer(message, dico_perm)
@@ -22,8 +22,7 @@ def recuit_simule(message, nbPermutations, dico_ref, n, cool_ratio, cool_time, T
     meilleur_dico = dico_perm
     meilleur_message = res
     meilleur_score = score_courant
-    T = T_init
-    print(f"Température initiale : {T:.2f}")
+    T = t_initial
     score_history = []  #Contiendra le score courant à chaque itération
 
     for i in range(nbPermutations):
@@ -42,17 +41,21 @@ def recuit_simule(message, nbPermutations, dico_ref, n, cool_ratio, cool_time, T
 
         score_history.append(score_courant)
         if i != 0 and i%cool_time == 0:
-            print(f"Refroidissement apres {cool_time} iterations")
+            #print(f"Refroidissement apres {cool_time} iterations")
             T *= cool_ratio    #Abaissement de la température (Refroidissement)
 
-    print(f"Meilleur score trouve : {meilleur_score}")
-    return meilleur_message, meilleur_score, score_history
+    #print(f"Meilleur score trouve : {meilleur_score}")
+    return meilleur_message, meilleur_score, score_history, meilleur_dico
 
-"""corpus_ref = file_to_str("germinal_nettoye")
-dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 4))
+""""
+corpus_ref = file_to_str("germinal_nettoye")
+dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 3))
 
-a_dechiffrer = file_to_str("chiffres/chiffre_germinal_22_509_1")
+FREQS_LETTRES = normaliser_dico(dico_n_grammes(corpus_ref, 1))
+
+print(f"FR{FREQS_LETTRES}")
+a_dechiffrer = file_to_str("chiffres/chiffre_germinal_3_318_1")
 #a_dechiffrer = file_to_str("chiffres/chiffre_germinal_20_110_1")
-texte, scoref, score_tab = recuit_simule(a_dechiffrer, 6000, dico_ngrams, 4, 0.6, 200, calculer_temperature_initiale(a_dechiffrer, dico_ngrams, 4))
+texte, scoref, score_tab, dico = recuit_simule(a_dechiffrer, 8000, dico_ngrams, 3, 0.75, 200, calculer_temperature_initiale(a_dechiffrer, dico_ngrams, 3))
 
 str_to_file(texte, "resultat")"""
