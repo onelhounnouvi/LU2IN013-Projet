@@ -58,7 +58,7 @@ max_stagnation_classique = 400
 max_stagnation_opt = 300
 cool_ratio = 0.75
 cool_time = 200
-tabu_nb_iter = 140
+tabu_nb_iter = 100
 
 # --- Listes de stockage des taux de réussite ---
 rates_hc = []
@@ -73,21 +73,12 @@ dico_ref = normaliser_dico(dico_n_grammes(corpus_ref, n_gramme))
 for taille, msg_chiffre in textes_chiffres.items():
     print(f"Sur texte {taille}")
 
-    if taille == 110:
-        n_gramme_hc = 2
-        dico_ref_hc = normaliser_dico(dico_n_grammes(corpus_ref, n_gramme_hc))
-        tabu_nb_iter = 150
-    else:
-        n_gramme_hc = n_gramme
-        dico_ref_hc = dico_ref
-        tabu_nb_iter = 140
-
     # Hill Climbing Classique
     print("Hill Climbing Classique")
     taux_hc = evaluer_taux_reussite(
         hill_climbing,
         message=msg_chiffre, dico_clair=dicos_clairs[taille], repetitions=repetitions,
-        seuil=seuil, nbPermutations=nbPerm, dico_ref=dico_ref_hc, n=n_gramme_hc, max_stagnation=max_stagnation_classique
+        seuil=seuil, nbPermutations=nbPerm, dico_ref=dico_ref, n=n_gramme, max_stagnation=max_stagnation_classique
     )
     rates_hc.append(taux_hc)
 
@@ -96,7 +87,7 @@ for taille, msg_chiffre in textes_chiffres.items():
     taux_hco = evaluer_taux_reussite(
         hill_climbing_optimise,
         message=msg_chiffre, dico_clair=dicos_clairs[taille], repetitions=repetitions, seuil=seuil,
-        nbPermutations=nbPerm, dico_ref=dico_ref_hc, n=n_gramme_hc, max_stagnation=max_stagnation_opt
+        nbPermutations=nbPerm, dico_ref=dico_ref, n=n_gramme, max_stagnation=max_stagnation_opt
     )
     rates_hco.append(taux_hco)
 
