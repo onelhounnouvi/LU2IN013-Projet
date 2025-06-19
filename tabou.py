@@ -1,7 +1,7 @@
 from collections import deque
 from substitution import *
 
-def recherche_tabou(message, nb_iter, dico_ref, n, tabu_size=100):
+def recherche_tabou(message, nb_iter, dico_ref, n):
     """Applique la recherche tabou pour décrypter un message chiffré et retourne l'historique des scores."""
 
     dico_courant = dico_permutation_alea()
@@ -12,7 +12,7 @@ def recherche_tabou(message, nb_iter, dico_ref, n, tabu_size=100):
     meilleur_message = message_courant
     meilleur_score = score_courant
 
-    liste_tabou = deque(maxlen=tabu_size)
+    liste_tabou = deque(maxlen=1000000)
     score_history = [score_courant]  # Ajout du score initial
 
     for _ in range(nb_iter):
@@ -26,14 +26,13 @@ def recherche_tabou(message, nb_iter, dico_ref, n, tabu_size=100):
         voisins.sort(key=lambda x: x[0])  # tri croissant
 
         for score_voisin, voisin, texte_voisin, mouvement in voisins:
-            mouvement_canonique = tuple(sorted(mouvement))
-            if mouvement_canonique not in liste_tabou or score_voisin < meilleur_score:
+            mouvement_inv = (mouvement[1], mouvement[0])
+            if (mouvement not in liste_tabou and mouvement_inv not in liste_tabou) or score_voisin < meilleur_score:
                 dico_courant = voisin
                 message_courant = texte_voisin
                 score_courant = score_voisin
-                liste_tabou.append(mouvement_canonique)
+                liste_tabou.append(mouvement)
                 break
-
 
         if score_courant < meilleur_score:
             meilleur_dico = dico_courant
@@ -42,22 +41,5 @@ def recherche_tabou(message, nb_iter, dico_ref, n, tabu_size=100):
 
         score_history.append(score_courant)
         
-    print(f"Meilleur score trouve : {meilleur_score}")
-    return meilleur_message, meilleur_score, score_history
-
-
-corpus_ref = file_to_str("germinal_nettoye")
-dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 2))
-
-textes_chiffres = {
-    110: file_to_str("chiffres/chiffre_germinal_20_110_1"),
-    205: file_to_str("chiffres/chiffre_germinal_5_205_1"),
-    318: file_to_str("chiffres/chiffre_germinal_3_318_1"),
-    509: file_to_str("chiffres/chiffre_germinal_22_509_1")
-}
-for texte in textes_chiffres.values():
-    message,_ , _ = recherche_tabou(texte, 100, dico_ngrams, 2,1000000)
-    print(message)
-    
-    #Bonne valeur : taille tabou = 220, nb_iter = 310
-    #taille_tabou = 370, nb_tier = 460
+    #print(f"Meilleur score trouve : {score_courant}")
+    return meilleur_message, meilleur_score, score_history, meilleur_dico
