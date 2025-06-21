@@ -1,13 +1,16 @@
+
 \documentclass[a4paper]{article}
 \usepackage[french]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{graphicx}
+\usepackage{subcaption}
 \usepackage{adjustbox}
 \usepackage{enumitem}
 \usepackage[colorlinks = true, linkcolor = blue]{hyperref}
 \usepackage{amsmath}
 \usepackage{float}
 \usepackage{xcolor}
+\usepackage[a4paper, top=1.5cm, bottom=1.5cm, left=3cm, right=3cm]{geometry}
 
 \newcommand{\highlight}[1]{\textbf{\textcolor{red}{\underline{#1}}}}
 
@@ -22,8 +25,8 @@
         {\LARGE Rapport du projet LU2IN013}\\[0.3cm] 
         \rule{\linewidth}{0.5mm} \\[0.6cm] 
         {\huge \textbf{Automatisation de la cryptanalyse des cryptosystèmes classiques à l'aide d'algorithme modernes}}\\[0.4cm] 
-        \rule{\linewidth}{0.5mm} \\[1cm] {\large Encadrante: Mme Valérie Ménissier-Morain}\\[5cm] 
-        {\Large Helder Brito, O'nel Hounnouvi}
+        \rule{\linewidth}{0.5mm} \\[1cm] {\large Encadrante: Mme Valérie Ménissier-Morain}\\[4cm] 
+        {\Large Helder Brito (21304177) et O'nel Hounnouvi (21315612) }
         \vfill Février 2025 -- Juin 2025
     \end{center} 
 \end{titlepage}
@@ -35,78 +38,79 @@
 \newpage
 
 \section{Introduction}
-La cryptographie constitue depuis toujours un pilier dans la sécurisation des communications. 
-Historiquement, les cryptosystèmes classiques – chiffrements par substitution, par transposition, de Vigenère, de Playfair, etc. – ont permis de chiffrer autant des messages privés que des secrets militaires et civils. 
-Le déchiffrage de ces messages reposait sur des méthodes manuelles, dont le degré de rigueur et de succès variait selon les époques. Avec l'avènement de l'informatique et l'amélioration des capacités de calcul, 
-le domaine a évolué: ce qui était autrefois l'apanage d'experts peut désormais s'appuyer sur des algorithmes modernes d'optimisation. Que ce soit avec le \textit{hill climbing, le recuit simulé} ou encore \textit{les algorithmes génétiques}, 
-il est désormais possible d’automatiser et d’améliorer ce processus de cryptanalyse. 
+La cryptographie constitue depuis longtemps un fondement essentiel dans la protection des communications sensibles. Les cryptosystèmes dits classiques, tels que les chiffrements par substitution monoalphabétique, par transposition, ou encore les méthodes de Vigenère et de Playfair, ont historiquement joué un rôle central dans la préservation de la confidentialité, aussi bien dans les sphères civiles que militaires. Leur vulnérabilité résidait toutefois dans le fait que le déchiffrement reposait sur des procédés manuels, dont l’efficacité variait selon le contexte historique et les connaissances disponibles.
 
-L’objectif de ce projet est de formaliser et comparer ces approches d’automatisation. 
+La cryptanalyse, discipline complémentaire, vise précisément à étudier et à mettre à l’épreuve ces mécanismes de chiffrement, dans le but d’en évaluer la solidité face à des tentatives d’attaque. L’émergence de l’informatique et l’essor des capacités de calcul ont profondément renouvelé les approches dans ce domaine : les méthodes empiriques d’autrefois peuvent désormais être automatisées à l’aide d’algorithmes d’optimisation heuristique. Des techniques telles que le hill climbing, le recuit simulé ou la recherche tabou permettent ainsi d’explorer de manière efficace l’espace des clés possibles, en s’appuyant sur des propriétés statistiques de la langue pour guider les attaques.
 
-\section{Substitution monoalphabétique}
+Ce projet a pour but de développer des techniques de cryptanalyse automatisée appliquées aux chiffrements classiques, en particulier le chiffrement par substitution monoalphabétique. Il poursuit un double objectif : d’une part, mettre en œuvre différentes méthodes heuristiques d’attaque ; d’autre part, analyser et comparer leurs performances afin d’évaluer leur efficacité.
+
+\section{Substitution monoalphabétique et cryptanalyse}
 
 \subsection{Définition}
 
-La substitution monoalphabétique est l'une des plus anciennes méthodes de chiffrement. Elle consiste à remplacer dans le message clair une lettre donnée de l'alphabet par une autre lettre. Voici un exemple:
+La \textbf{substitution monoalphabétique} est l’une des plus anciennes méthodes de chiffrement. Elle consiste à remplacer, dans le message clair, chaque lettre de l’alphabet par une autre selon une permutation fixe. Voici un exemple :
 
 \vspace{1em}
 \begin{adjustbox}{width=\textwidth,center}
-    \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+    \begin{tabular}{|*{26}{c|}}
         \hline
-        A & B & C & D & E & F & G & H & I & J & K & L & M & N & O & P & Q & R & S & T & U & V & W & X & Y & Z \\
+        \texttt{A} & \texttt{B} & \texttt{C} & \texttt{D} & \texttt{E} & \texttt{F} & \texttt{G} & \texttt{H} & \texttt{I} & \texttt{J} & \texttt{K} & \texttt{L} & \texttt{M} & \texttt{N} & \texttt{O} & \texttt{P} & \texttt{Q} & \texttt{R} & \texttt{S} & \texttt{T} & \texttt{U} & \texttt{V} & \texttt{W} & \texttt{X} & \texttt{Y} & \texttt{Z} \\
         \hline
-        X & Y & Z & A & B & C & D & E & F & G & H & I & J & K & L & M & N & O & P & Q & R & S & T & U & V & W \\
+        \texttt{X} & \texttt{Y} & \texttt{Z} & \texttt{A} & \texttt{B} & \texttt{C} & \texttt{D} & \texttt{E} & \texttt{F} & \texttt{G} & \texttt{H} & \texttt{I} & \texttt{J} & \texttt{K} & \texttt{L} & \texttt{M} & \texttt{N} & \texttt{O} & \texttt{P} & \texttt{Q} & \texttt{R} & \texttt{S} & \texttt{T} & \texttt{U} & \texttt{V} & \texttt{W} \\
         \hline
     \end{tabular}
 \end{adjustbox}
+
 \vspace{1em}
 
+Par exemple, le message \textit{SUBSTITUTION} devient \textit{PRYPQFQRQFLK}.
 
-Le message \textit{SUBSTITUTION} devient \textit{PRYPQFQRQFLK}.
+L’alphabet latin comportant 26 lettres, on peut définir $26! \approx 4 \times 10^{26}$ permutations possibles, soit environ $2^{88}$. À titre de comparaison, environ $2^{58}$ secondes se sont écoulées depuis le début de l’univers, ce qui rend une attaque par force brute totalement irréaliste.
 
-
-L'alphabet latin comporte 26 lettres. Cela permet donc de construire $26! = 4 \times 10^{26}$ permutations, soit de l'ordre de $2^{88}$.  
-Sachant qu’environ $2^{58}$ secondes se sont écoulées depuis la création de l’univers, il serait impossible d’explorer toutes les permutations.  
-Ce chiffre donne une impression de sûreté qui est toutefois trompeuse\ldots
+Cependant, cette impression de sécurité est \textbf{trompeuse}, car la substitution monoalphabétique conserve en grande partie les \textbf{caractéristiques statistiques} de la langue d’origine (fréquences de lettres, combinaisons courantes, etc.).
 
 \subsection{Cryptanalyse}
 
-\subsubsection{Un peu de vocabulaire}
+\subsubsection{Quelques définitions}
 
-Le \textbf{déchiffrage} consiste à convertir un message chiffré en son contenu original (le texte clair) lorsqu'on est en possession de la clé.
+\begin{itemize}
+    \item Le \textbf{déchiffrage} consiste à retrouver le texte clair à partir du cryptogramme, en utilisant la clé.
+    \item La \textbf{cryptanalyse} désigne l’ensemble des techniques visant à casser un message chiffré \textit{sans} connaître la clé.
+    \item Le \textbf{cryptogramme} est le message chiffré, que l’on cherche à déchiffrer.
+    \item Un \textbf{n-gramme} est une séquence de $n$ lettres consécutives dans un texte. Par exemple, dans le mot \textit{CRYPTANALYSE}, les bigrammes ($n = 2$) sont : CR, RY, YP, etc., et les trigrammes ($n = 3$) sont : CRY, RYP, YPT, etc.
+\end{itemize}
 
-La \textbf{cryptanalyse} quant à elle est l'ensemble des techniques mises en œuvre pour tenter de casser le message codé sans avoir la clé de chiffrement.
+\subsubsection{Attaque par analyse fréquentielle}
 
-Le \textbf{cryptogramme} est le message chiffré, c'est-à-dire le texte codé que l'on cherche à déchiffrer.
+La substitution monoalphabétique présente une \textbf{faiblesse structurelle majeure} : chaque lettre du texte clair est systématiquement remplacée par la même lettre chiffrée. Ainsi, la structure statistique de la langue (fréquences des lettres et des séquences de lettres) est \textbf{partiellement préservée} dans le cryptogramme.
 
-Un \textbf{n-gramme} est une séquence de $n$ lettres consécutives dans un texte.
-Par exemple, dans le mot \textit{CRYPTANALYSE}, les bigrammes ($n=2$) incluent \textit{CR}, \textit{RY}, \textit{YP}, \ldots, tandis que les trigrammes ($n=3$) sont \textit{CRY}, \textit{RYP}, \textit{YPT}, \ldots.  
+Cette propriété permet de mettre en œuvre une \textbf{attaque par analyse fréquentielle}, qui repose sur la comparaison des fréquences d’apparition des n-grammes dans le message chiffré avec celles issues d’un corpus de référence en français.
 
+En s’appuyant sur un dictionnaire de n-grammes (bigrammes, trigrammes, etc.) issu d’un grand ensemble de textes en français, il est possible d’estimer la plausibilité linguistique d’un texte. Cette estimation permet de guider la cryptanalyse vers des textes proches du message original.
 
-\subsubsection{Attaque}
+\subsubsection{Fonction de score (fitness function)}
 
-La substitution monoalphabétique possède une grosse faiblesse structurelle. Chaque occurrence d’une lettre du texte clair est systématiquement remplacée par la même lettre chiffrée. Ainsi, les caractéristiques statistiques de la langue française sont conservés en partie dans le message chiffré.  
-C'est cette faille que nous allons exploiter.
-Notre analyse ici sera basée sur l’analyse des fréquences d’apparition des n-grammes dans le message chiffré.
+Afin d’évaluer la qualité des solutions proposées (c’est-à-dire des hypothèses de clé), on utilise une \textbf{fonction de score}, ou \textit{fitness function}. Celle-ci doit remplir deux critères essentiels :
 
-En utilisant un dictionnaire de référence contenant les fréquences relatives des n-grammes dans un large corpus de textes en français, il est possible d’estimer la probabilité qu’un texte donné soit écrit dans cette langue.
+\begin{itemize}
+    \item \textbf{Discriminante} : elle doit bien différencier un texte encore très chiffré (score mauvais) d’un texte proche du clair (score bon).
+    \item \textbf{Efficace} : elle doit être rapide à calculer, car elle sera invoquée un très grand nombre de fois.
+\end{itemize}
 
-\subsubsection{Fitness function}
-Pour évaluer la qualité des solutions potentielles et identifier celle qui convient le mieux, nous attribuons un score à chaque solution avec une \textit{fitness function}.
-Pour être efficace, une telle fonction doit être suffisamment discriminante c'est à dire ressortir les différences entre un texte encore très chiffré (score mauvais) et un texte proche du clair (score bon). Elle doit être aussi rapide à calculer, car elle sera appelée de nombreuses fois.   
-La fitness function utilisée dans ce projet est basée sur la somme des probabilités logarithmiques des n-grammes du texte chiffré. C’est la fonction de log-vraisemblance. Elle est définie comme suit:
+Dans ce projet, la fonction utilisée est fondée sur la \textbf{log-vraisemblance} des n-grammes du texte déchiffré. Elle est définie comme suit :
 
 \[
-score = - \sum \log(frequence(c_1 \ldots c_n))
+\text{score} = - \sum \log\left(\text{fréquence}(c_1 \ldots c_n)\right)
 \]
 
-L’objectif ici est de minimiser ce score. La solution ayant le plus petit score est celle qui sera «le plus» français.
+où $(c_1 \ldots c_n)$ désigne un n-gramme du texte analysé.
 
-\subsection{Métaheuristiques}
+L’objectif est de \textbf{minimiser ce score} : plus le texte est linguistiquement probable en français, plus les n-grammes qu’il contient sont fréquents, et plus le score est faible.
 
-Une métaheuristique est un algorithme d’optimisation itératif et stochastique\footnote{Un processus stochastique est un processus dont l’évolution est déterminée par des phénomènes aléatoires.} destiné à résoudre des problèmes pour lesquels aucune méthode classique plus efficace n'existe. Ici elle servira à nous rapprocher le plus possible du minimum glabal de la fonction score.
 
-\subsubsection{Hill Climbing}
+\section{Premiers essais : Hill Climbing}
+
+\subsection{Principe de l’algorithme Hill Climbing}
 
 L’idée générale est la suivante:
 \begin{enumerate}
@@ -131,13 +135,101 @@ C'est pour éviter qu'il reste longtemps dans cette impasse que nous introduison
 
 Il nous faut maintenant définir comment générer une clé voisine à la clé courante (étape 2-\ref{item:modification} de l’algorithme).  
 Pour cela, on effectue une permutation aléatoire de deux lettres dans la clef. En guise d'exemple:
-
 \begin{center}
 \texttt{Q\highlight{W}ERTZUIOPASDF\highlight{G}HJKLXCVBNM} $\rightarrow$ \texttt{Q\highlight{G}ERTZUIOPASDF\highlight{W}HJKLXCVBNM}
 \end{center}
 
+\subsection{Résultats initiaux et observations}
 
-\subsubsection{Hill Climbing optimisé}
+\subsubsection{Influence de la taille du texte et du nombre maximum de stagnations}
+
+Nous commençons par étudier l’effet de la longueur du texte chiffré sur les performances de l’algorithme de \textit{hill climbing}. La figure~\ref{fig:n3-tailles} compare l’évolution du score moyen pour deux tailles de texte : 110 et 509 caractères, en utilisant des trigrammes ($n = 3$). Chaque courbe est issue d’une moyenne sur 200 essais indépendants, pour différentes valeurs du paramètre de stagnation.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{hillclimb_n3_taille110_perm100-5900.png}
+        \caption{Texte court : 110 caractères}
+        \label{fig:n3-110}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{hillclimb_n3_taille509_perm100-5900.png}
+        \caption{Texte plus long : 509 caractères}
+        \label{fig:n3-509}
+    \end{subfigure}
+    \caption{Évolution du score moyen avec $n = 3$ selon la taille du texte.}
+    \label{fig:n3-tailles}
+\end{figure}
+
+On observe que les scores moyens sont significativement meilleurs et plus stables avec un texte
+de 509 caractères, car le score moyen se trouve plus proche du score du texte clair. Les statistiques
+de trigrammes sont en effet plus fiables avec un plus grand corpus, ce qui rend la fonction de score
+plus informative. En revanche, pour les textes courts (110 caractères), la rareté des trigrammes
+entraîne un bruit important et nuit à la stabilité des résultats. Cela montre que la taille du texte
+joue un rôle déterminant dans la qualité de la cryptanalyse fondée sur les n-grammes.
+
+Enfin, le paramètre de stagnation, qui fixe le nombre maximal d’itérations sans amélioration
+avant arrêt de l’algorithme, joue également un rôle clé. Si cette valeur est trop faible, l’algorithme
+risque de s’arrêter prématurément avant d’avoir atteint un minimum local de qualité. À l’inverse,
+une valeur trop élevée entraîne un temps d’exécution plus long sans nécessairement améliorer les
+performances finales. Il est donc essentiel de trouver un compromis entre efficacité temporelle et
+qualité des résultats. Nos courbes montrent généralement une amélioration du score moyen jusqu’à
+un certain seuil de stagnation, au-delà duquel les gains deviennent marginaux.
+
+\subsubsection{Influence du choix de $n$ dans les $n$-grammes}
+
+Nous analysons à présent l’impact de la taille des n-grammes sur les performances, en nous fixant un texte court d’environ 110 caractères. La figure~\ref{fig:ngrams-1150} compare les scores moyens obtenus avec des bigrammes ($n=2$) et des quadgrammes ($n=4$), toujours sur une moyenne de 200 essais.
+
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{hillclimb_n2_taille1150_perm100-5900.png}
+        \caption{$n = 2$ (bigrammes)}
+        \label{fig:n2-110}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{hillclimb_n4_taille1150_perm100-5900.png}
+        \caption{$n = 4$ (quadgrammes)}
+        \label{fig:n4-110}
+    \end{subfigure}
+    \caption{Comparaison du score moyen pour $n = 2$ et $n = 4$ (texte de 1150 caractères).}
+    \label{fig:ngrams-1150}
+\end{figure}
+Les résultats mettent en évidence un contraste marqué :
+
+\begin{itemize}
+    \item Les bigrammes ($n=2$) fournissent de meilleurs scores et relativement stables.
+    \item Les quadgrammes ($n=4$) conduisent à des performances très variables et souvent médiocres. La rareté des séquences de 4 lettres dans un petit corpus les rend peu informatives, ce qui provoque une optimisation instable et chaotique.
+\end{itemize}
+
+Ces observations suggèrent que, pour des textes courts, il est préférable d’utiliser des n-grammes de petite taille. À l’inverse, des n-grammes plus longs nécessitent un corpus nettement plus important pour être exploitables. Comme l’illustre la section précédente, les trigrammes ($n=3$) constituent un bon compromis à partir d’environ 400 à 500 caractères.
+
+
+
+\subsection{Limites identifiées}
+
+Malgré sa simplicité et sa rapidité, l’algorithme de \textit{Hill Climbing} présente plusieurs limitations qui réduisent son efficacité sur certains cryptogrammes :
+
+\begin{itemize}
+    \item \textbf{Blocage dans des minima locaux} \\
+    L’algorithme n’accepte que les modifications qui améliorent le score. Ainsi, s’il atteint une solution pour laquelle aucune permutation simple n’apporte d’amélioration, il se retrouve bloqué, même si une meilleure solution globale existe ailleurs dans l’espace des clés.
+
+    \item \textbf{Dépendance à l'initialisation} \\
+    Le point de départ (clé aléatoire) a un impact fort sur la solution finale. Une exécution peut aboutir à une solution lisible, tandis qu’une autre, à partir d’une autre clé de départ, peut rester dans un état très chiffré.
+
+    \item \textbf{Résultats instables sur les textes courts} \\
+    Lorsque le texte à déchiffrer est court, l’analyse fréquentielle devient moins fiable, et le Hill Climbing tend à converger vers des textes partiellement déchiffrés mais peu compréhensibles.
+
+    \item \textbf{Absence de mémoire ou de stratégie d’évitement} \\
+    Hill Climbing ne conserve aucune trace des solutions précédemment explorées. Il peut donc revisiter inutilement les mêmes configurations et ne dispose d’aucun mécanisme pour forcer la sortie de zones stagnantes.
+\end{itemize}
+
+
+\subsection{Optimisation de Hill Climbing}
+\subsubsection{Principe de la version optimisé}
 
 Comme son nom l’indique, cette méthode est une version améliorée du Hill Climbing classique. Elle apporte une solution au blocage dans un minimum local.
 Au lieu d’abandonner après une stagnation excessive, elle effectue une réinitialisation de la recherche. Une nouvelle clef aléatoire est générée, et l’algorithme recommence depuis l’étape 1.
@@ -145,7 +237,19 @@ Cette stratégie permet d’explorer plusieurs régions de l’espace des soluti
 
 Notons qu'on enregistre la meilleure solution trouvée jusqu'à présent, afin de ne pas perdre les progrès réalisés.
 
-\subsubsection{Recuit simulé}
+\section{Recherche d’alternatives plus robustes}
+
+\subsection{Motivation}
+
+
+Bien que notre version optimisée du \textit{Hill Climbing} ait permis d'améliorer significativement les résultats initiaux, certaines limites structurelles persistent. En particulier, la stratégie reste majoritairement basée sur l’exploitation locale, ce qui peut la rendre sensible aux pièges du paysage de solution, notamment dans les cas de cryptogrammes courts ou bruités.
+
+Afin d’évaluer des approches potentiellement plus robustes, nous avons décidé d'explorer d'autres métaheuristiques capables de mieux équilibrer l'exploration globale et l'exploitation locale. Le \textit{recuit simulé} et la \textit{recherche tabou} offrent des mécanismes spécifiques qui leur permettent d’éviter plus efficacement les minima locaux : acceptation temporaire de solutions moins bonnes dans le premier cas, et mémoire des états précédemment visités dans le second. Ces caractéristiques en font des candidats intéressants pour améliorer la résilience de l’algorithme, diversifier les zones explorées et, à terme, renforcer la qualité de la cryptanalyse automatique.
+
+
+
+\subsection{Recuit simulé}
+
 Le recuit simulé est une méthode d’optimisation inspirée du processus de recuit en métallurgie, où un matériau est chauffé puis refroidi lentement pour atteindre un état de faible énergie.
 Notre algorithme est présenté de la façon suivante:
 \begin{enumerate}
@@ -176,13 +280,16 @@ Notre algorithme est présenté de la façon suivante:
     \item \textbf{Critère d'arrêt:} Terminer l'algorithme après un nombre prédéfini d'itérations, puis retourner la solution finale $s$.
 \end{enumerate}
 
-
 Le recuit simulé échappe aux minima locaux en introduisant une étape d'acceptation probabiliste des solutions moins bonnes. Concrètement, au lieu d'accepter uniquement les modifications qui améliorent le score, l'algorithme accepte une solution voisine avec la probabilité $P_{\text{accept}}$.
 Au début, la température T est élevée, ce qui rend l'expression $\exp\left(-\frac{\Delta}{T}\right)$ relativement grande. Cela permet donc à l'algorithme d'accepter des solutions moins bonnes et d'explorer plus librement l'espace de recherche, en sautant potentiellement hors d'un minimum local.
 
 Au fur et à mesure que l'algorithme progresse, la température est progressivement abaissée (refroidissement), ce qui diminue la probabilité d'accepter des solutions moins performantes. Ainsi, en phase finale, le recuit simulé affine la solution dans un voisinage qui se rapproche d'un minimum global.
 
-\subsubsection{Recherche tabou}
+
+\subsection{Recherche tabou}
+
+
+\subsubsection{Principe de la recherche tabou}
 
 La recherche tabou utilise une mémoire pour éviter de revisiter des solutions déjà explorées. L'idée générale est la suivante:
 
@@ -248,15 +355,6 @@ Lorsque l’on applique la version optimisée du hill climbing, on observe une a
 \section*{Annexes}
 \addcontentsline{toc}{section}{Annexes}
 \label{sec:annexes}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.85\textwidth]{HillClimbing1.png}
-    \caption{Hill Climbing sur un texte de 110 caractères.}
-    \label{fig:hill_110}
-\end{figure}
-
-\clearpage
 \section*{Références}
 \addcontentsline{toc}{section}{Bibliographie}
 \label{sec:bibliographie}
