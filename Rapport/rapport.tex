@@ -1,4 +1,3 @@
-
 \documentclass[a4paper]{article}
 \usepackage[french]{babel}
 \usepackage[T1]{fontenc}
@@ -94,8 +93,8 @@ En s’appuyant sur un dictionnaire de n-grammes (bigrammes, trigrammes, etc.) i
 Afin d’évaluer la qualité des solutions proposées (c’est-à-dire des hypothèses de clé), on utilise une \textbf{fonction de score}, ou \textit{fitness function}. Celle-ci doit remplir deux critères essentiels :
 
 \begin{itemize}
-    \item \textbf{Discriminante} : elle doit bien différencier un texte encore très chiffré (score mauvais) d’un texte proche du clair (score bon).
-    \item \textbf{Efficace} : elle doit être rapide à calculer, car elle sera invoquée un très grand nombre de fois.
+    \item \textbf{Discriminante}: elle doit bien différencier un texte encore très chiffré (score mauvais) d’un texte proche du clair (score bon).
+    \item \textbf{Efficace}: elle doit être rapide à calculer, car elle sera invoquée un très grand nombre de fois.
 \end{itemize}
 
 Dans ce projet, la fonction utilisée est fondée sur la \textbf{log-vraisemblance} des n-grammes du texte déchiffré. Elle est définie comme suit :
@@ -109,7 +108,7 @@ où $(c_1 \ldots c_n)$ désigne un n-gramme du texte analysé.
 L’objectif est de \textbf{minimiser ce score} : plus le texte est linguistiquement probable en français, plus les n-grammes qu’il contient sont fréquents, et plus le score est faible.
 
 
-\section{Premiers essais : Hill Climbing}
+\section{Premiers essais: Hill Climbing}
 
 \subsection{Principe de l’algorithme Hill Climbing}
 
@@ -122,7 +121,7 @@ L’idée générale est la suivante:
     \end{enumerate}
     \item \textbf{Boucle principale:}
     \begin{enumerate}[label= (\alph*)]
-        \item \label{item:modification} Générer une solution voisine $C2$ en faisant une légère modification et calculer le nouveau score
+        \item\label{item:modification} Générer une solution voisine $C2$ en faisant une légère modification et calculer le nouveau score
         \item Si ce score est meilleur que le score précédent, adopter cette nouvelle clef comme clef courante: $C1 \leftarrow C2$\\
               Sinon, conserver l’ancienne clé $C1$.
     \end{enumerate}
@@ -132,7 +131,7 @@ L’idée générale est la suivante:
 Il arrive fréquemment que l’algorithme se retrouve bloqué dans un minimum local: il n’arrive plus à améliorer la solution actuelle, bien que meilleure solution globale n’ait pas encore été trouvée.  
 C'est pour éviter qu'il reste longtemps dans cette impasse que nous introduisons une condition d'arrêt basée sur la variable max-stagnation.
 
-\subsubsection*{Modification de la clef}\label{sec:modification_de_la_clef}
+\subsubsection*{Modification de la clef}\label{modification}
 
 Il nous faut maintenant définir comment générer une clé voisine à la clé courante (étape 2-\ref{item:modification} de l’algorithme).  
 Pour cela, on effectue une permutation aléatoire de deux lettres dans la clef. En guise d'exemple:
@@ -220,7 +219,7 @@ Pour compléter l’analyse, nous présentons sur la~\figref{fig:taux_reussite} 
 \end{figure}
 
 
-Les résultats confirment une tendance claire : lorsque le texte chiffré contient moins de 300 caractères, le taux de réussite reste faible et très instable. Cela s'explique par l’insuffisance des statistiques $n$-grammiques sur un corpus trop court, ce qui rend la fonction de score peu fiable.
+Les résultats confirment une tendance claire: lorsque le texte chiffré contient moins de 300 caractères, le taux de réussite reste faible et très instable. Cela s'explique par l’insuffisance des statistiques $n$-grammiques sur un corpus trop court, ce qui rend la fonction de score peu fiable.
 
 En revanche, à partir de 300 à 400 caractères, les performances s'améliorent nettement, avec une stabilisation du taux de réussite d'environ 70~\%. Le \textit{hill climbing} devient alors une méthode relativement fiable pour la cryptanalyse monoalphabétique. Ce constat rejoint les observations précédentes sur la nécessité d’un corpus suffisamment long pour que la fonction de score basée sur les $n$-grammes soit efficace.
 
@@ -270,10 +269,10 @@ générée, et l’algorithme recommence depuis l’étape 1. Cette stratégie p
 La~\figref{fig:hc_optimise_score} compare l’évolution du score moyen (avec $n=3$ et une taille de texte de 110 caractères) entre l’algorithme classique (déjà présenté précédemment) et sa version optimisée.
 
 \begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth, keepaspectratio, height=0.7\textheight]{comparaison_hc_vs_opt_n3_taille110}
-\caption{Comparaison de l’évolution du score moyen pour le \textit{hill climbing} classique et optimisé ($n=3$, texte de 110 caractères).}
-\label{fig:hc_optimise_score}
+    \centering
+    \includegraphics[width=0.8\textwidth, keepaspectratio, height=0.7\textheight]{comparaison_hc_vs_opt_n3_taille110.png}
+    \caption{Comparaison de l’évolution du score moyen pour le \textit{hill climbing} classique et optimisé ($n=3$, texte de 110 caractères).}
+    \label{fig:hc_optimise_score}
 \end{figure}
 
 On observe que le score moyen obtenu par l’algorithme optimisé est bien meilleur que celui du \textit{hill climbing} classique. Cela indique une convergence vers des solutions de meilleure qualité, malgré la faible longueur du texte.
@@ -281,16 +280,16 @@ On observe que le score moyen obtenu par l’algorithme optimisé est bien meill
 Cette amélioration se reflète également dans le taux de réussite global : comme le montre la~\figref{fig:taux_reussite_optimise}, le \textit{hill climbing} optimisé obtient un taux de réussite nettement supérieur au classique, en particulier pour les textes court (100 à 200 caractères), où l’approche classique reste souvent piégée dans des configurations sous-optimales.
 
 \begin{figure}[H]
-\centering
-\includegraphics[width=0.7\textwidth, keepaspectratio, height=0.6 \textheight]{taux_reussite_hc_optimise.png}
-\caption{Taux de réussite comparé entre le \textit{hill climbing} classique et optimisé selon la longueur du texte.}
-\label{fig:taux_reussite_optimise}
+    \centering
+    \includegraphics[width=0.7\textwidth, keepaspectratio, height=0.6 \textheight]{taux_reussite_hc_optimise.png}
+    \caption{Taux de réussite comparé entre le \textit{hill climbing} classique et optimisé selon la longueur du texte.}
+    \label{fig:taux_reussite_optimise}
 \end{figure}
 
 En somme, cette version optimisée du hill climbing parvient non seulement à améliorer la qualité des solutions trouvées, mais elle renforce également la robustesse de l’algorithme face aux difficultés posées par les textes courts. Cette amélioration a toutefois un coût en temps de calcul, un aspect que nous analyserons plus en détail dans la \hyperref[sec:comparaison_meta]{section~\ref*{sec:comparaison_meta}}.
 
 \subsection{Recuit simulé}
-
+\subsubsection{Principe du recuit simulé}
 
 Le recuit simulé est une méthode d’optimisation inspirée du processus de recuit en métallurgie, où un matériau est chauffé puis refroidi lentement pour atteindre un état de faible énergie.
 Notre algorithme est présenté de la façon suivante:
@@ -328,8 +327,70 @@ Au début, la température T est élevée, ce qui rend l'expression $\exp\left(-
 Au fur et à mesure que l'algorithme progresse, la température est progressivement abaissée (refroidissement), ce qui diminue la probabilité d'accepter des solutions moins performantes. Ainsi, en phase finale, le recuit simulé affine la solution dans un voisinage qui se rapproche d'un minimum global.
 
 
-\subsection{Recherche tabou}
+\subsubsection{Résultats}
 
+Dans cette section, nous avons trois paramètres importants à considérer: la température initiale $T_0$, le coefficient de refroidissement \textbf{cool-ratio} (indiquant la fraction de la température actuelle qui est conservée) et le nombre d'itérations au bout duquel on applique le refroidissement \textbf{cool-time}
+
+La température initiale $T_0$ est calculée en évaluant la variation moyenne des scores obtenus sur un échantillon de 100 clés générées aléatoirement. Cette moyenne est ensuite multipliée par un facteur empirique, permettant d'obtenir une température adaptée, ni trop faible ni trop élevée. 
+Ainsi, la température s'ajuste automatiquement à la taille du message chiffré et au n-gramme choisi, assurant une exploration efficace de l'espace de recherche.
+
+
+La figure \ref{fig:rs-n3-110} présente l'évolution du score moyen pour un
+texte court de 110 caractères, en utilisant des trigrammes ($n=3$) et en faisant varier le \textbf{cool-ratio} entre 0.2 et 0.9 et selon le cas où le refroidissement est fréquent (cool-time = 200) ou moins fréquent (cool-time = 1000).
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{graphe_recuit_n_3_110_cool_time_200.png}
+        \caption{Cool-time = 200 itérations}
+        \label{fig:n3-110-200}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{graphe_recuit_n_3_110_cool_time_1000.png}
+        \caption{Cool-time = 1000 itérations}
+        \label{fig:n3-509-200}
+    \end{subfigure}
+    \caption{Texte court (110 caractères)}
+    \label{fig:rs-n3-110}
+\end{figure}
+
+\begin{itemize}
+    \item Pour un refroidissement fréquent (cool-time = 200), on observe qu'un cool-ratio bas (par exemple, 0.2 ou 0.3) refroidit rapidement le système. Cela conduit à une convergence précoce vers des scores inférieurs à celui du texte clair, probablement en piégeant l'algorithme dans des minima locaux. 
+          En revanche, avec un cool-ratio plus élevé (0.8 ou 0.9), la température décroît lentement, permettant à l’algorithme de continuer à accepter des solutions moins bonnes pendant un plus grand nombre d’itérations, avant de se stabiliser sur une solution assez proche du texte clair. 
+          On voit clairement que la valeur \textbf{cool-ratio = 0.8} donne de meilleurs résultats, à partir de 7000 itérations.
+    \item Pour un refroidissement moins fréquent (cool-time = 1000), on observe que la décroissance est plus lente, moins immédiate mais finit pas converger. Un cool-ratio élevé (0.8 ou 0.9) retarde la diminution de la température sur le long terme, ce qui donne une impression de stagnation du score moyen, sans aucune amélioration significative.
+          Par contre un cool-ratio plus bas (0.2 ou 0.3), permet une décroissance rapide mais contrôlée (à cause de la fréquence réduite) de la température et donc du score moyen. Cela permet à l'algorithme de continuer à explorer l'espace de recherche pendant un plus grand nombre d'itérations et de mener à des scores finaux meilleurs. 
+          On remarque qu'un cool-ratio de 0.3 apparaît comme un bon compromis en convergeant vers un score proche du score du texte clair dès environ 7000 itérations, tout en restant comparable aux performances obtenues avec un cool-ratio de 0.5 à 10000 itérations.
+\end{itemize}
+
+Dans la suite des comparaisons, nous allons considérer un refroidissement fréquent (cool-time = 200) car il donne de meilleurs résultats en terme de stabilité.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth, keepaspectratio, height=0.7\textheight]{graphe_recuit_n_3_1150_cool_time_200.png}
+    \caption{Texte long (1150 caractères)}
+    \label{fig:n3-110-1000}
+\end{figure}
+
+On remarque que les graphes ont la même allure, que ce soit pour un texte court ou long. La différence est que la courbe des scores moyens (peu immporte la valuer de cool-ratio) se rapproche beaucoup plus du score du texte clair pour le texte long.
+On en déduit que le recuit simulé est plus efficace sur des textes longs, tout comme avec les deux algorithmes précédents.
+
+
+En ce qui concerne l'influence du choix des n-grammes, on note une légère amélioration de la convergence du score moyen les bigrammes ($n=2$). Mais les tétragrammes ($n=4$) ne semblent pas apporter d'amélioration significative (voire même dégradent les performances pour les textes courts). 
+Les figures \ref{fig:rs-n2-n4-110} et \ref{fig:rs-n2-n4-1150} en \hyperref[sec:annexes]{annexes} le montrent clairement. Les trigrammes restent une fois de plus le bon compromis pour tous les textes.
+
+Généralement, à  partir de 200-300 caractères, on obtient d'excellents avec le recuit simulé.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth, keepaspectratio, height=0.6 \textheight]{taux_reussite_rs.png}
+    \caption{Taux de réussite du recuit simulé selon la longueur du texte.}
+    \label{fig:taux_reussite_optimise}
+\end{figure}
+
+
+\subsection{Recherche tabou}
 
 La recherche tabou utilise une mémoire pour éviter de revisiter des solutions déjà explorées. L'idée générale est la suivante:
 
@@ -388,6 +449,41 @@ Bien qu'efficace sur le chiffrement par substitution, l'attaque par analyse fré
 
 \clearpage
 \section*{Annexes}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{graphe_recuit_n_2_110_cool_time_200.png}
+        \caption{n = 2}
+        \label{fig:n2-110-200}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{graphe_recuit_n_4_110_cool_time_200.png}
+        \caption{n = 4}
+        \label{fig:n4-110-200}
+    \end{subfigure}
+    \caption{Influence des n-grammes. Texte court (110 caractères) avec recuit simulé.}
+    \label{fig:rs-n2-n4-110}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{graphe_recuit_n_2_1150_cool_time_200.png}
+        \caption{n = 2}
+        \label{fig:n2-1150-200}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{graphe_recuit_n_4_1150_cool_time_200.png}
+        \caption{n = 4}
+        \label{fig:n4-1150-200}
+    \end{subfigure}
+    \caption{Influence des n-grammes. Texte court (110 caractères) avec recuit simulé.}
+    \label{fig:rs-n2-n4-1150}
+\end{figure}
+
 \addcontentsline{toc}{section}{Annexes}\label{sec:annexes}
 \section*{Références}
 
