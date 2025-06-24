@@ -90,14 +90,14 @@ En s’appuyant sur un dictionnaire de n-grammes (bigrammes, trigrammes, etc.) i
 
 \subsubsection{\textit{Fitness function}}
 
-Afin d’évaluer la qualité des solutions proposées (c’est-à-dire des hypothèses de clé), on utilise une \textbf{fonction de score}, ou \textit{fitness function}. Celle-ci doit remplir deux critères essentiels :
+Pour évaluer la qualité des solutions proposées — c’est-à-dire des hypothèses de clés permettant de déchiffrer le message — on utilise une \textbf{fonction de score} appelée aussi \textit{fitness function}. Cette fonction doit répondre à deux critères importants :
 
 \begin{itemize}
-    \item \textbf{Discriminante}: elle doit bien différencier un texte encore très chiffré (score mauvais) d’un texte proche du clair (score bon).
-    \item \textbf{Efficace}: elle doit être rapide à calculer, car elle sera invoquée un très grand nombre de fois.
+    \item \textbf{Discriminante}: elle doit bien faire la différence entre un texte encore très chiffré (qui aura un mauvais score) et un texte proche du clair (qui aura un bon score).
+    \item \textbf{Efficace}: elle doit pouvoir être calculée rapidement, car elle sera appelée très souvent au cours de la recherche de la bonne clé.
 \end{itemize}
 
-Dans ce projet, la fonction utilisée est fondée sur la \textbf{log-vraisemblance} des n-grammes du texte déchiffré. Elle est définie comme suit :
+Dans notre projet, la fonction de score est basée sur la log-vraisemblance des n-grammes du texte déchiffré. En d’autres termes, elle mesure la probabilité que des groupes de lettres (comme des paires, triplets, etc.) apparaissent dans un texte en français. Formellement, cette fonction s’écrit :
 
 \[
 \text{score} = - \sum \log\left(\text{fréquence}(c_1 \ldots c_n)\right)
@@ -105,7 +105,7 @@ Dans ce projet, la fonction utilisée est fondée sur la \textbf{log-vraisemblan
 
 où $(c_1 \ldots c_n)$ désigne un n-gramme du texte analysé.
 
-L’objectif est de \textbf{minimiser ce score} : plus le texte est linguistiquement probable en français, plus les n-grammes qu’il contient sont fréquents, et plus le score est faible.
+Plus le score est bas, meilleur est le texte : cela signifie que le texte déchiffré ressemble davantage à du français courant, car il contient des groupes de lettres fréquents comme « es », « ion » ou « ent ». Ainsi, lors de la cryptanalyse, on cherche à \textbf{minimiser ce score} pour trouver la clé qui produit un texte le plus proche possible du clair.
 
 
 \section{Premiers essais: \textit{hill climbing}}
@@ -471,7 +471,7 @@ Pour faciliter une comparaison visuelle, nous avons appliqué un padding aux cou
     \label{fig:score-temps}
 \end{figure}
 
-Il apparaît que les variantes du hill climbing (classique et optimisé) amorcent une descente rapide du score dès les premiers instants. Cependant, le hill climbing classique converge de façon \textbf{précoce}précoce et se stabilise rapidement, indiquant une tendance à se bloquer dans des minima locaux. 
+Il apparaît que les variantes du hill climbing (classique et optimisé) amorcent une descente rapide du score dès les premiers instants. Cependant, le hill climbing classique converge de façon \textbf{précoce} et se stabilise rapidement, indiquant une tendance à se bloquer dans des minima locaux. 
 A l'inverse, la version optimisée a une convergence plus \textbf{contrôlée} et atteint quasiment le score du texte clair.
 
 Le recuit simulé et la recherche tabou présentent une convergence moins agressive au début, accompagnée d'une exploration plus douce (particulièrement pour le recuit simulé) et d'une amélioration graduelle. Les courbes associées finissent par atteindre un plateau très proche du score du texte clair.
@@ -543,6 +543,16 @@ Bien qu'efficace sur le chiffrement par substitution, l'attaque par analyse fré
 \end{itemize}
 
 \section{Conclusion}
+
+Ce projet a permis d’explorer différentes approches de cryptanalyse automatisée du chiffrement par substitution monoalphabétique. Nous avons implémenté plusieurs métaheuristiques — \textit{hill climbing}, recuit simulé, recherche tabou — et les avons évaluées de manière comparative selon des critères de performance, tels que le taux de réussite, la stabilité et le temps d’exécution.
+
+Si le \textit{hill climbing} classique constitue une solution simple et rapide, il souffre de blocages fréquents dans des minima locaux. Pour pallier cette faiblesse, une version optimisée introduisant des redémarrages aléatoires s’est révélée bien plus robuste, notamment sur les textes courts. Le recuit simulé et la recherche tabou, quant à eux, se sont montrés particulièrement efficaces dès que la taille du texte permet une exploitation fiable des statistiques n-grammiques. Parmi les configurations testées, l’utilisation de trigrammes a offert un bon compromis entre précision et régularité.
+
+Néanmoins, l’analyse fréquentielle montre rapidement ses limites dans certains contextes : textes trop courts, constructions linguistiques atypiques, ou distributions de lettres volontairement perturbées. C’est pourquoi d’autres types d’attaques peuvent s’avérer plus pertinents selon les situations. L’\textit{attaque par mot probable}, par exemple, repose sur l’hypothèse de la présence d’un mot attendu dans le message. Elle a joué un rôle historique décisif contre la machine \textit{Enigma}, lorsque les cryptanalystes britanniques ont exploité l’occurrence fréquente du mot \og Führer \fg{} dans les messages allemands. En conjuguant cette stratégie à une analyse structurelle et à des erreurs humaines, ils ont réussi à briser le chiffrement d’Enigma — un événement qui a profondément influencé le cours de la Seconde Guerre mondiale.
+
+Ce projet ouvre ainsi la voie à de nombreuses perspectives. D’abord, il serait possible d’explorer d’autres types d’algorithmes, ou même d’en combiner plusieurs pour tirer parti de leurs forces respectives. On pourrait aussi appliquer ces méthodes à des systèmes de chiffrement plus complexes, comme le chiffre de Vigenère, les grilles de transposition, ou encore des machines historiques comme Enigma.
+
+Enfin, dépasser la simple analyse des fréquences permettrait de rendre les attaques plus efficaces dans des situations réalistes : par exemple en s’appuyant sur des outils de traitement automatique de la langue, capables de reconnaître des structures grammaticales, ou en prenant en compte les erreurs ou les abréviations présentes dans les messages. Cela permettrait de mieux s’adapter à la variété des textes rencontrés dans des contextes réels.
 
 
 \clearpage
