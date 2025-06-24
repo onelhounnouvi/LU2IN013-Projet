@@ -39,7 +39,7 @@
 \section{Introduction}
 La cryptographie constitue depuis longtemps un fondement essentiel dans la protection des communications sensibles. Les cryptosystèmes dits classiques, tels que les chiffrements par substitution monoalphabétique, par transposition, ou encore les méthodes de Vigenère et de Playfair, ont historiquement joué un rôle central dans la préservation de la confidentialité, aussi bien dans les sphères civiles que militaires. Leur vulnérabilité résidait toutefois dans le fait que le déchiffrement reposait sur des procédés manuels, dont l’efficacité variait selon le contexte historique et les connaissances disponibles.
 
-La cryptanalyse, discipline complémentaire, vise précisément à étudier et à mettre à l’épreuve ces mécanismes de chiffrement, dans le but d’en évaluer la solidité face à des tentatives d’attaque. L’émergence de l’informatique et l’essor des capacités de calcul ont profondément renouvelé les approches dans ce domaine : les méthodes empiriques d’autrefois peuvent désormais être automatisées à l’aide d’algorithmes d’optimisation heuristique. Des techniques telles que le hill climbing, le recuit simulé ou la recherche tabou permettent ainsi d’explorer de manière efficace l’espace des clés possibles, en s’appuyant sur des propriétés statistiques de la langue pour guider les attaques.
+La cryptanalyse, discipline complémentaire, vise précisément à étudier et à mettre à l’épreuve ces mécanismes de chiffrement, dans le but d’en évaluer la solidité face à des tentatives d’attaque. L’émergence de l’informatique et l’essor des capacités de calcul ont profondément renouvelé les approches dans ce domaine : les méthodes empiriques d’autrefois peuvent désormais être automatisées à l’aide d’algorithmes d’optimisation heuristique. Des techniques telles que le \textit{hill climbing}, le recuit simulé ou la recherche tabou permettent ainsi d’explorer de manière efficace l’espace des clés possibles, en s’appuyant sur des propriétés statistiques de la langue pour guider les attaques.
 
 Ce projet a pour but de développer des techniques de cryptanalyse automatisée appliquées aux chiffrements classiques, en particulier le chiffrement par substitution monoalphabétique. Il poursuit un double objectif : d’une part, mettre en œuvre différentes méthodes heuristiques d’attaque ; d’autre part, analyser et comparer leurs performances afin d’évaluer leur efficacité.
 
@@ -108,9 +108,9 @@ où $(c_1 \ldots c_n)$ désigne un n-gramme du texte analysé.
 L’objectif est de \textbf{minimiser ce score} : plus le texte est linguistiquement probable en français, plus les n-grammes qu’il contient sont fréquents, et plus le score est faible.
 
 
-\section{Premiers essais: Hill Climbing}
+\section{Premiers essais: \textit{hill climbing}}
 
-\subsection{Principe de l’algorithme Hill Climbing}
+\subsection{Principe de l’algorithme \textit{hill climbing}}
 
 L’idée générale est la suivante:
 \begin{enumerate}
@@ -122,7 +122,7 @@ L’idée générale est la suivante:
     \item \textbf{Boucle principale:}
     \begin{enumerate}[label= (\alph*)]
         \item\label{item:modification} Générer une solution voisine $C2$ en faisant une légère modification et calculer le nouveau score
-        \item Si ce score est meilleur que le score précédent, adopter cette nouvelle clef comme clef courante: $C1 \leftarrow C2$\\
+        \item Si ce score est meilleur que le score précédent, adopter cette nouvelle clé comme clé courante: $C1 \leftarrow C2$\\
               Sinon, conserver l’ancienne clé $C1$.
     \end{enumerate}
     \item \textbf{Critère d'arrêt:} Terminer l'algorithme après un nombre prédéfini d'itérations, ou lorsqu'on a atteint un nombre prédéfini d'itérations sans amélioration du score (stagnation).
@@ -131,10 +131,10 @@ L’idée générale est la suivante:
 Il arrive fréquemment que l’algorithme se retrouve bloqué dans un minimum local: il n’arrive plus à améliorer la solution actuelle, bien que meilleure solution globale n’ait pas encore été trouvée.  
 C'est pour éviter qu'il reste longtemps dans cette impasse que nous introduisons une condition d'arrêt basée sur la variable max-stagnation.
 
-\subsubsection*{Modification de la clef}\label{modification}
+\subsubsection*{Modification de la clé}\label{modification}
 
 Il nous faut maintenant définir comment générer une clé voisine à la clé courante (étape 2-\ref{item:modification} de l’algorithme).  
-Pour cela, on effectue une permutation aléatoire de deux lettres dans la clef. En guise d'exemple:
+Pour cela, on effectue une permutation aléatoire de deux lettres dans la clé. En guise d'exemple:
 \begin{center}
 \texttt{Q\highlight{W}ERTZUIOPASDF\highlight{G}HJKLXCVBNM} $\rightarrow$ \texttt{Q\highlight{G}ERTZUIOPASDF\highlight{W}HJKLXCVBNM}
 \end{center}
@@ -237,10 +237,10 @@ Malgré sa simplicité et sa rapidité, l’algorithme de \textit{Hill Climbing}
     Le point de départ (clé aléatoire) a un impact fort sur la solution finale. Une exécution peut aboutir à une solution lisible, tandis qu’une autre, à partir d’une autre clé de départ, peut rester dans un état très chiffré.
 
     \item \textbf{Résultats instables sur les textes courts} \\
-    Lorsque le texte à déchiffrer est court, l’analyse fréquentielle devient moins fiable, et le Hill Climbing tend à converger vers des textes partiellement déchiffrés mais peu compréhensibles.
+    Lorsque le texte à déchiffrer est court, l’analyse fréquentielle devient moins fiable, et le \textit{hill climbing} tend à converger vers des textes partiellement déchiffrés mais peu compréhensibles.
 
     \item \textbf{Absence de mémoire ou de stratégie d’évitement} \\
-    Hill Climbing ne conserve aucune trace des solutions précédemment explorées. Il peut donc revisiter inutilement les mêmes configurations et ne dispose d’aucun mécanisme pour forcer la sortie de zones stagnantes.
+    Le \textit{hill climbing} ne conserve aucune trace des solutions précédemment explorées. Il peut donc revisiter inutilement les mêmes configurations et ne dispose d’aucun mécanisme pour forcer la sortie de zones stagnantes.
 \end{itemize}
 
 
@@ -248,25 +248,23 @@ Malgré sa simplicité et sa rapidité, l’algorithme de \textit{Hill Climbing}
 
 \subsection{Motivations}
 
-L’algorithme de \textit{hill climbing} adopte une stratégie purement gloutonne : il se contente d’exploiter localement les solutions voisines qui améliorent immédiatement le score, sans jamais envisager de déplacements temporaires vers des solutions moins favorables. Cette approche le rend particulièrement vulnérable aux minima locaux : une fois piégé, il ne dispose d’aucun mécanisme pour en sortir.
-
-De plus, ses performances dépendent fortement du point de départ (clé initiale), et deux exécutions peuvent produire des résultats très différents selon l’initialisation, en particulier pour les textes courts.
-
-Pour surmonter ces limitations, nous explorons des alternatives plus robustes et plus flexibles, capables :
+Face à ces limitations, il devient nécessaire d’explorer des approches plus robustes. Celles-ci doivent être capables :
 \begin{itemize}
-    \item de mieux équilibrer \textit{exploration} et \textit{exploitation}
-    \item de s’échapper des minima locaux
-    \item et d’améliorer les performances globales, en particulier la stabilité des résultats.
+    \item de s’extraire des minima locaux,
+    \item de mieux équilibrer \textit{exploration} (diversité) et \textit{exploitation} (amélioration),
+    \item et de produire des résultats plus fiables, notamment sur des textes courts.
 \end{itemize}
 
+Dans cette optique, nous avons explorés des alternatives plus robustes et plus flexibles.
 
-\subsection{Amélioration du Hill Climbing}
+
+\subsection{Amélioration du \textit{hill climbing}}
 
 Pour pallier les limitations du \textit{hill climbing} classique, nous introduisons une version optimisée: au lieu d’abandonner après une
-stagnation excessive, elle effectue une réinitialisation de la recherche. Une nouvelle clef aléatoire est
+stagnation excessive, elle effectue une réinitialisation de la recherche. Une nouvelle clé aléatoire est
 générée, et l’algorithme recommence depuis l’étape 1. Cette stratégie permet d’échapper plus facilement aux pièges des minima locaux tout en conservant la rapidité de l’approche gloutonne.
 
-La~\figref{fig:hc_optimise_score} compare l’évolution du score moyen (avec $n=3$ et une taille de texte de 110 caractères) entre l’algorithme classique (déjà présenté précédemment) et sa version optimisée.
+La figure~\ref{fig:hc_optimise_score} compare l’évolution du score moyen (avec $n=3$ et une taille de texte de 110 caractères) entre l’algorithme classique (déjà présenté précédemment) et sa version optimisée.
 
 \begin{figure}[H]
     \centering
@@ -277,16 +275,16 @@ La~\figref{fig:hc_optimise_score} compare l’évolution du score moyen (avec $n
 
 On observe que le score moyen obtenu par l’algorithme optimisé est bien meilleur que celui du \textit{hill climbing} classique. Cela indique une convergence vers des solutions de meilleure qualité, malgré la faible longueur du texte.
 
-Cette amélioration se reflète également dans le taux de réussite global : comme le montre la~\figref{fig:taux_reussite_optimise}, le \textit{hill climbing} optimisé obtient un taux de réussite nettement supérieur au classique, en particulier pour les textes court (100 à 200 caractères), où l’approche classique reste souvent piégée dans des configurations sous-optimales.
+Cette amélioration se reflète également dans le taux de réussite global : comme le montre la figure~\ref{fig:taux_reussite_hc_optimise}, le \textit{hill climbing} optimisé obtient un taux de réussite nettement supérieur au classique, en particulier pour les textes court (100 à 200 caractères), où l’approche classique reste souvent piégée dans des configurations sous-optimales.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth, keepaspectratio, height=0.6 \textheight]{taux_reussite_hc_optimise.png}
     \caption{Taux de réussite comparé entre le \textit{hill climbing} classique et optimisé selon la longueur du texte.}
-    \label{fig:taux_reussite_optimise}
+    \label{fig:taux_reussite_hc_optimise}
 \end{figure}
 
-En somme, cette version optimisée du hill climbing parvient non seulement à améliorer la qualité des solutions trouvées, mais elle renforce également la robustesse de l’algorithme face aux difficultés posées par les textes courts. Cette amélioration a toutefois un coût en temps de calcul, un aspect que nous analyserons plus en détail dans la \hyperref[sec:comparaison_meta]{section~\ref*{sec:comparaison_meta}}.
+En somme, cette version optimisée du \textit{hill climbing} parvient non seulement à améliorer la qualité des solutions trouvées, mais elle renforce également la robustesse de l’algorithme face aux difficultés posées par les textes courts. Cette amélioration a toutefois un coût en temps de calcul, un aspect que nous analyserons plus en détail dans la \hyperref[sec:comparaison_meta]{section~\ref*{sec:comparaison_meta}}.
 
 \subsection{Recuit simulé}
 \subsubsection{Principe du recuit simulé}
@@ -302,7 +300,7 @@ Notre algorithme est présenté de la façon suivante:
     \end{enumerate}
     \item \textbf{Boucle principale:}
     \begin{enumerate}[label= (\alph*)]
-        \item Générer une solution voisine $C2$ en faisant une légère modification (voir~\ref{sec:modification_de_la_clef})
+        \item Générer une solution voisine $C2$ en faisant une légère modification (voir~\ref{sec:modification_de_la_clé})
         \item Calculer le changement de coût, défini par
         \[
             \Delta = score(C2) - score(C1).
@@ -368,7 +366,7 @@ Dans la suite des comparaisons, nous allons considérer un refroidissement fréq
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth, keepaspectratio, height=0.7\textheight]{graphe_recuit_n_3_1150_cool_time_200.png}
+    \includegraphics[width=0.8\textwidth, keepaspectratio, height=0.6\textheight]{graphe_recuit_n_3_1150_cool_time_200.png}
     \caption{Texte long (1150 caractères)}
     \label{fig:n3-110-1000}
 \end{figure}
@@ -386,12 +384,12 @@ Généralement, à  partir de 200-300 caractères, on obtient d'excellents avec 
     \centering
     \includegraphics[width=0.7\textwidth, keepaspectratio, height=0.6 \textheight]{taux_reussite_rs.png}
     \caption{Taux de réussite du recuit simulé selon la longueur du texte.}
-    \label{fig:taux_reussite_optimise}
+    \label{fig:taux_reussite_rs}
 \end{figure}
 
 
 \subsection{Recherche tabou}
-
+\subsubsection{Principe de l’algorithme}
 La recherche tabou utilise une mémoire pour éviter de revisiter des solutions déjà explorées. L'idée générale est la suivante:
 
 \begin{enumerate}
@@ -403,7 +401,7 @@ La recherche tabou utilise une mémoire pour éviter de revisiter des solutions 
     \end{enumerate}
     \item \textbf{Boucle principale:}
     \begin{enumerate}[label= (\alph*)]
-        \item Explorer un echantillon de clés voisines $C2$ en faisant de légères modifications (voir~\ref{sec:modification_de_la_clef}).
+        \item Explorer un echantillon de clés voisines $C2$ en faisant de légères modifications (voir~\ref{sec:modification_de_la_clé}).
         \item Vérifier si $C2$ est dans la liste tabou. Si oui, rejeter la solution
         \item Sinon, calculer le score de $C2$. Si ce score est meilleur que le score précédent, adopter cette nouvelle clé comme clé courante : $C1 \leftarrow C2$.
         \item Ajouter $C2$ à la liste tabou 
@@ -411,13 +409,74 @@ La recherche tabou utilise une mémoire pour éviter de revisiter des solutions 
     \item \textbf{Critère d'arrêt:} Terminer l'algorithme après un nombre prédéfini d'itérations.
 \end{enumerate}
 
+Les voisins de la clé courante sont générés en permutant deux lettres aléatoires. À chaque itération, un sous-ensemble de 100 clés voisines est sélectionné de manière aléatoire. Cette méthode permet un bon compromis entre diversité des propositions et temps de calcul raisonnable.
 
-En interdisant les solutions déjà explorées, la recherche tabou favorise l'exploration de nouvelles régions de l'espace de recherche et donc d'échapper aux minima locaux.
+\vspace{0.5em}
+
+La liste tabou est implémentée comme un ensemble contenant les clés déjà explorées, représentées sous forme de chaînes de caractères. Dans nos expérimentations, nous avons choisi d’utiliser une liste tabou de taille illimitée. Cela signifie qu’aucune solution ne peut être revisitée une fois marquée comme taboue, même après de nombreuses itérations.
+Cette stratégie maximise l’exploration de l’espace des clés, au prix d’un temps d’exécution plus long. Elle agit comme une forme implicite de diversification, forçant l’algorithme à s’éloigner progressivement de la solution initiale. En contrepartie, il devient impossible de revenir sur une bonne solution précédemment écartée. Toutefois, sur des clés de taille modeste (26 lettres), cette stratégie s’est révélée efficace et n’a pas conduit à des impasses, même sur de longues séquences d’itérations.
+
+\vspace{0.5em}
+
+Enfin, on note que la recherche tabou a peu de paramètres à ajuster, ce qui en fait une méthode robuste et relativement simple à implémenter. En dehors du nombre d’itérations et de la stratégie de voisinage, elle ne nécessite pas de réglages fins comme c’est le cas pour d’autres métaheuristiques (par exemple le recuit simulé).
+
+
+\subsubsection{Résultats}
+
+Nous avons testé l’algorithme pour differentes tailles de texte en utilisant des trigrammes ($n = 3$). La figure~\ref{fig:tabou_taille} montre l’évolution du score moyen au fil des itérations pour 200 essais indépendants.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{courbe_tabou_110.png}
+        \caption{Texte court : 110 caractères}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{courbe_tabou_318.png}
+        \caption{Texte moyen : 318 caractères}
+    \end{subfigure}
+    \caption{Évolution du score moyen avec $n = 3$ selon la taille du texte (recherche tabou).}
+    \label{fig:tabou_taille}
+\end{figure}
+
+On constate, comme pour le \textit{hill climbing}, que les performances augmentent nettement avec la taille du texte. À 110 caractères, les résultats sont très variables d’un essai à l’autre, tandis qu’à partir de 200 caractères, les scores deviennent plus réguliers et plus proches du texte clair. Au-delà de 300 caractères, ce phénomène se stabilise, et les gains sont faibles, ce qui nous conduit à considérer 300 caractères comme une taille suffisante pour obtenir des résultats fiables avec cette méthode. C'est en effet ce nous confirme la figure~\ref{annexe:tabou_500} en \hyperref[sec:annexes]{annexes}.
+
+\medskip
+
+La figure~\ref{fig:tabou_taux} présente le taux de réussite de la recherche tabou en fonction de la taille du texte. Encore une fois, une tentative est considérée comme réussie si elle permet de retrouver au moins 90\% des correspondances de lettres exactes par rapport à la clé originale.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{taux_reussite_tabou.png}
+    \caption{Taux de réussite de la recherche tabou selon la taille du texte (avec $n = 3$).}
+    \label{fig:tabou_taux}
+\end{figure}
+
+On observe une nette progression du taux de réussite avec la taille du texte. Les performances restent modestes pour les très courts messages, mais reste quand même bien plus efficaces que le \textit{hill climbing}.
 
 \section{Comparaisons des différentes métaheuristiques}
 \label{sec:comparaison_meta}
+Pour faciliter une comparaison visuelle, nous avons considéré les paramètres optimaux pour chaque algorithme. De plus, nous avons appliquer un padding 
+aux courbes de Hill Climbing classique, Hill Climbing optimisé et recuit simulé (8000 permutations) afin de les étendre jusqu'aux 15000 permutations 
+(150 itérations * 100 permutations dans le voisinage) correspondant à la Recherche Tabou. La figure présente l'évolution du score et du temps d'exécution 
+moyen pour les quatre algorithmes sur un texte de 318 caractères, en utilisant des trigrammes ($n=3$).
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth, keepaspectratio, height=\textheight]{comparaison_algorithmes_et_temps.png}
+    \caption{Comparaison de l'évolution du score et du temps d'exécution moyen}
+    \label{fig:score-temps}
+\end{figure}
 
+Taux de réussite
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth, keepaspectratio, height=\textheight]{taux_reussite.png}
+    \caption{Taux de réussite des algorithmes selon la longueur du texte.}
+    \label{fig:tous-reussite}
+\end{figure}
 \section{Limites de l'attaque par analyse fréquentielle}
 
 Bien qu'efficace sur le chiffrement par substitution, l'attaque par analyse fréquentielle montre rapidement ses limites face à certains cas particuliers. En voici quelques exemples notables:
@@ -480,9 +539,16 @@ Bien qu'efficace sur le chiffrement par substitution, l'attaque par analyse fré
         \caption{n = 4}
         \label{fig:n4-1150-200}
     \end{subfigure}
-    \caption{Influence des n-grammes. Texte court (110 caractères) avec recuit simulé.}
+    \caption{Influence des n-grammes. Texte long (1150 caractères) avec recuit simulé.}
     \label{fig:rs-n2-n4-1150}
 \end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{courbe_tabou_509.png}
+    \caption{Évolution du score moyen pour un texte de 509 caractères avec $n = 3$ (recherche tabou).}
+    \label{annexe:tabou_500}
+\end{figure}
+
 
 \addcontentsline{toc}{section}{Annexes}\label{sec:annexes}
 \section*{Références}
