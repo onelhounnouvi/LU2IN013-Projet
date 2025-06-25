@@ -61,6 +61,8 @@ La \textbf{substitution monoalphabétique} est l’une des plus anciennes métho
     \end{adjustbox}
 \vspace{1em}
 
+La chaîne \textbf{GJQWRBYPZUOXDSIFTAKLNMVCHE} identifie la substitution: c'est la clé de chiffrement.
+
 Par exemple, le mot \textit{SUBSTITUTION} devient  \textit{LMJLKZKMKZIS}.
 
 L’alphabet latin comportant 26 lettres, il y a $26! \approx 4 \times 10^{26}$ permutations possibles, soit environ $2^{88}$. À titre de comparaison, environ $2^{58}$ secondes se sont écoulées depuis le début de l’univers, ce qui rend une attaque par force brute totalement irréaliste.
@@ -72,7 +74,7 @@ Cependant, cette impression de sécurité est \textbf{trompeuse}\ldots
 \subsubsection{Quelques définitions}
 
 \begin{itemize}
-    \item Le \textbf{cryptogramme} est un message chiffré à l'aide d'une clé.
+    \item Le \textbf{cryptogramme} est un message chiffré à l'aide d'une clé de chiffrement.
     \item Le \textbf{déchiffrement} consiste à retrouver le texte clair associé à un cryptogramme en utilisant la clé.
     \item La \textbf{cryptanalyse} désigne l’opération visant à retrouver le texte clair associé à un cryptogramme \textit{sans connaître} la clé.
     \item Un \textbf{n-gramme} est une séquence de $n$ lettres consécutives dans un texte. Par exemple, dans le mot \textit{CRYPTANALYSE}, les bigrammes ($n = 2$) successifs sont: CR, RY, YP, etc., et les trigrammes ($n = 3$) sont: CRY, RYP, YPT, etc.
@@ -90,22 +92,36 @@ En s’appuyant sur un dictionnaire de n-grammes (bigrammes, trigrammes, etc.) i
 
 \subsubsection{\textit{Fitness function}}
 
-Pour évaluer la qualité des solutions proposées — c’est-à-dire des hypothèses de clés permettant de déchiffrer le message — on utilise une \textbf{fonction de score} appelée aussi \textit{fitness function}. Cette fonction doit répondre à deux critères importants :
+Afin de retrouver la clé de chiffrement, on énumère différentes clés candidates; afin de guider cette exploration et de fixer un critère d'arrêt, on attribue à chaque clé un score qui reflète la qualité du texte clair potentiel associé.
+Pour cela, on utilise une \textbf{fonction de score} aussi appelée \textit{fitness function}. Cette fonction doit répondre à deux critères importants:
 
 \begin{itemize}
     \item \textbf{Discriminante}: elle doit bien faire la différence entre un texte encore très chiffré (qui aura un mauvais score) et un texte proche du clair (qui aura un bon score).
     \item \textbf{Efficace}: elle doit pouvoir être calculée rapidement, car elle sera appelée très souvent au cours de la recherche de la bonne clé.
 \end{itemize}
 
-Dans notre projet, la fonction de score est basée sur la log-vraisemblance des n-grammes du texte déchiffré. En d’autres termes, elle mesure la probabilité que des groupes de lettres (comme des paires, triplets, etc.) apparaissent dans un texte en français. Formellement, cette fonction s’écrit :
+Dans notre projet, la fonction de score est basée sur la log-vraisemblance des n-grammes du texte déchiffré. En d’autres termes, elle mesure la probabilité que des groupes de lettres (comme des paires, triplets, etc.) apparaissent dans un texte en français. Formellement, cette fonction s’écrit:
 
 \[
 \text{score} = - \sum \log\left(\text{fréquence}(c_1 \ldots c_n)\right)
 \]
 
-où $(c_1 \ldots c_n)$ désigne un n-gramme du texte analysé.
+où $(c_1 \ldots c_n)$ désigne un n-gramme du texte analysé.\\
 
-Plus le score est bas, meilleur est le texte : cela signifie que le texte déchiffré ressemble davantage à du français courant, car il contient des groupes de lettres fréquents comme « es », « ion » ou « ent ». Ainsi, lors de la cryptanalyse, on cherche à \textbf{minimiser ce score} pour trouver la clé qui produit un texte le plus proche possible du clair.
+Du fait du changement de signe, c'est le texte qui aura le plus petit score qui devrait être « le plus » français. Voici un exemple:
+
+\begin{verbatim}
+        score('XZQMAJUSOPELBIWRAJ') =  126.94262499902115
+
+        score('CETEKTEASTFRONHAIS') =  99.25175038317276
+
+        score('CETEXTESETFRANWAIS') =  93.94251217048378
+
+        score('CETEXTEESTFRANCAIS') =  86.65660399012047
+\end{verbatim}
+
+
+Plus le score est bas, plus vraisemblables sont la clé envisagée et le texte déchiffré deduit. Ainsi, lors de la cryptanalyse, notre objectif sera de \textbf{minimiser le score}.
 
 
 \section{Premiers essais: \textit{hill climbing}}
@@ -129,7 +145,7 @@ L’idée générale est la suivante:
 \end{enumerate}
 
 Il arrive fréquemment que l’algorithme se retrouve bloqué dans un minimum local: il n’arrive plus à améliorer la solution actuelle, bien que la meilleure solution globale n’ait pas encore été trouvée.  
-C'est pour éviter qu'il reste longtemps dans cette impasse que nous introduisons une condition d'arrêt basée sur la variable \(\text{max\_stagnation}\).
+C'est pour éviter qu'il reste longtemps dans cette impasse que nous introduisons une condition d'arrêt basée sur la variable \texttt{max\_stagnation}.
 
 \subsubsection*{Modification de la clé}\label{modification_cle}
 
@@ -141,7 +157,7 @@ Pour cela, on effectue une permutation aléatoire de deux lettres dans la clé. 
 
 \subsection{Résultats initiaux et observations}
 
-\subsubsection{Influence de la taille du texte et de \(\text{max\_stagnation}\)}
+\subsubsection{Influence de la taille du texte et de \texttt{max\_stagnation}}
 
 Nous commençons par étudier l’effet de la longueur du texte chiffré sur les performances de l’algorithme de \textit{hill climbing}. La~\figref{fig:n3-tailles} compare l’évolution du score moyen pour deux tailles de texte : 110 et 509 caractères, en utilisant des trigrammes ($n = 3$). Chaque courbe est issue d’une moyenne sur 200 essais indépendants, pour différentes valeurs du paramètre de stagnation.
 
@@ -264,7 +280,7 @@ Pour pallier les limitations du \textit{hill climbing} classique, nous introduis
 stagnation excessive, elle effectue une réinitialisation de la recherche. Une nouvelle clé aléatoire est
 générée, et l’algorithme recommence depuis l’étape 1. Cette stratégie permet d’échapper plus facilement aux pièges des minima locaux tout en conservant la rapidité de l’approche gloutonne.
 
-La figure~\ref{fig:hc_optimise_score} compare l’évolution du score moyen (avec $n=3$ et une taille de texte de 110 caractères) entre l’algorithme classique (déjà présenté précédemment) et sa version optimisée.
+La figure~\ref{fig:hc_optimise_score} compare l’évolution du score moyen (avec $n=3$ et un texte de 110 caractères) entre l’algorithme classique (présenté précédemment) et sa version optimisée avec laquelle on effectue une réinitialisation toutes les 400 itérations quand le score ne s'amélioration du score. En effet, on a constaté que cela ne valait pas la peine d'attendre plus longtemps (confère figure ~\ref{fig:hc_optimise_stagnations} en ~\ref{sec:annexes}).
 
 \begin{figure}[H]
     \centering
@@ -273,9 +289,9 @@ La figure~\ref{fig:hc_optimise_score} compare l’évolution du score moyen (ave
     \label{fig:hc_optimise_score}
 \end{figure}
 
-On observe que le score moyen obtenu par l’algorithme optimisé est bien meilleur que celui du \textit{hill climbing} classique. Cela indique une convergence vers des solutions de meilleure qualité, malgré la faible longueur du texte.
+On observe que le score moyen obtenu par l’algorithme optimisé est bien meilleur que celui du \textit{hill climbing} classique. Cela indique une convergence vers des solutions de meilleure qualité, malgré la faible longueur du texte. Le prix à payer est un temps d'exécution plus long (à cause des réinitialisations) comme on le verra sur la figure ~\ref{fig:score-temps}.
 
-Cette amélioration se reflète également dans le taux de réussite global : comme le montre la figure~\ref{fig:taux_reussite_hc_optimise}, le \textit{hill climbing} optimisé obtient un taux de réussite nettement supérieur au classique, en particulier pour les textes court (100 à 200 caractères), où l’approche classique reste souvent piégée dans des configurations sous-optimales.
+Cette amélioration se reflète également dans le taux de réussite global: comme le montre la figure~\ref{fig:taux_reussite_hc_optimise}, le \textit{hill climbing} optimisé obtient un taux de réussite nettement supérieur au classique, en particulier pour les textes court (100 à 200 caractères), où l’approche classique reste souvent piégée dans des configurations sous-optimales.
 
 \begin{figure}[H]
     \centering
@@ -294,7 +310,7 @@ Notre algorithme est présenté de la façon suivante:
 \begin{enumerate}
     \item \textbf{Initialisation:} 
     \begin{enumerate}
-        \item Partir d'une clé aléatoire $C1$ et d'une température initiale $T_0$
+        \item Partir d'une clé aléatoire $C1$ et d'une température initiale \texttt{T\_init}
         \item Utiliser la clé pour déchiffrer le cryptogramme
         \item Calculer le score du texte obtenu
     \end{enumerate}
@@ -310,7 +326,7 @@ Notre algorithme est présenté de la façon suivante:
         \[
             P_{\text{accept}} = \exp\left(-\frac{\Delta}{T}\right).
         \]
-        \item Mettre à jour la température avec le coefficient de refroidissement $\alpha$ après un nombre d'itérations \(\text{cool\_time}\):
+        \item Mettre à jour la température avec le coefficient de refroidissement $\alpha$ après un nombre d'itérations \texttt{cool\_time}:
         \[
             T \leftarrow \alpha T, \quad \text{avec } 0 < \alpha < 1.
         \]
@@ -327,26 +343,25 @@ Au fur et à mesure que l'algorithme progresse, la température est progressivem
 
 \subsubsection{Résultats}
 
-Dans cette section, nous avons trois paramètres importants à considérer: la température initiale $T_0$, le coefficient de refroidissement \textit{\(\text{cool\_ratio}\)} (indiquant la fraction de la température actuelle qui est conservée) et le nombre d'itérations au bout duquel on applique le refroidissement \textbf{\(\text{cool\_time}\)}
+Dans cette section, nous avons trois paramètres importants à considérer: la température initiale \texttt{T\_init}, le coefficient de refroidissement \texttt{cool\_ratio} (indiquant la fraction de la température actuelle qui est conservée) et le nombre d'itérations au bout duquel on applique le refroidissement \textbf{\texttt{cool\_time}}
 
-La température initiale $T_0$ est calculée en évaluant la variation moyenne des scores obtenus sur un échantillon de 100 clés générées aléatoirement. Cette moyenne est ensuite multipliée par un facteur empirique, permettant d'obtenir une température adaptée, ni trop faible ni trop élevée. 
+La température initiale \texttt{T\_init} est calculée en évaluant la variation moyenne des scores obtenus sur un échantillon de 100 clés générées aléatoirement. Cette moyenne est ensuite multipliée par un facteur empirique, permettant d'obtenir une température adaptée, ni trop faible ni trop élevée. 
 Ainsi, la température s'ajuste automatiquement à la taille du message chiffré et au n-gramme choisi, assurant une exploration efficace de l'espace de recherche.
 
 
-La figure \ref{fig:rs-n3-110} présente l'évolution du score moyen pour un
-texte court de 110 caractères, en utilisant des trigrammes ($n=3$) et en faisant varier le \textbf{\(\text{cool\_ratio}\)} entre 0.2 et 0.9 et selon le cas où le refroidissement est fréquent (\(\text{cool\_time}\) = 200) ou moins fréquent (\(\text{cool\_time}\) = 1000).
+La figure \ref{fig:rs-n3-110} présente l'évolution du score moyen pour un texte court de 110 caractères, en utilisant des trigrammes ($n=3$) et en faisant varier le \texttt{cool\_ratio} entre 0.2 et 0.9 et selon le cas où le refroidissement est fréquent (\texttt{cool\_time} = 200) ou moins fréquent (\texttt{cool\_time} = 1000).
 
 \begin{figure}[H]
     \centering
     \begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{graphe_recuit_n_3_110_cool_time_200.png}
-        \caption{\(\text{Cool\_time}\) = 200 itérations}
+        \caption{\texttt{Cool\_time} = 200 itérations}
         \label{fig:n3-110-200}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{graphe_recuit_n_3_110_cool_time_1000.png}
-        \caption{\(\text{Cool\_time}\) = 1000 itérations}
+        \caption{\texttt{Cool\_time} = 1000 itérations}
         \label{fig:n3-509-200}
     \end{subfigure}
     \caption{Texte court (110 caractères)}
@@ -354,15 +369,15 @@ texte court de 110 caractères, en utilisant des trigrammes ($n=3$) et en faisan
 \end{figure}
 
 \begin{itemize}
-    \item Pour un refroidissement fréquent (\(\text{cool\_time}\) = 200), on observe qu'un \textit{\(\text{cool\_ratio}\)} bas (par exemple, 0.2 ou 0.3) refroidit rapidement le système. Cela conduit à une convergence précoce vers des scores inférieurs à celui du texte clair, probablement en piégeant l'algorithme dans des minima locaux. 
-          En revanche, avec un \(\text{cool\_ratio}\) plus élevé (0.8 ou 0.9), la température décroît lentement, permettant à l’algorithme de continuer à accepter des solutions moins bonnes pendant un plus grand nombre d’itérations, avant de se stabiliser sur une solution assez proche du texte clair. 
-          On voit clairement que la valeur \textbf{\(\text{cool\_ratio}\) = 0.8} donne de meilleurs résultats, à partir de 7000 itérations.
-    \item Pour un refroidissement moins fréquent (\(\text{cool\_time}\) = 1000), on observe que la décroissance est plus lente, moins immédiate mais finit pas converger. Un \(\text{cool\_ratio}\) élevé (0.8 ou 0.9) retarde la diminution de la température sur le long terme, ce qui donne une impression de stagnation du score moyen, sans aucune amélioration significative.
-          Par contre un \(\text{cool\_ratio}\) plus bas (0.2 ou 0.3), permet une décroissance rapide mais contrôlée (à cause de la fréquence réduite) de la température et donc du score moyen. Cela permet à l'algorithme de continuer à explorer l'espace de recherche pendant un plus grand nombre d'itérations et de mener à des scores finaux meilleurs. 
-          On remarque qu'un \(\text{cool\_ratio}\) de 0.3 apparaît comme un bon compromis en convergeant vers un score proche du score du texte clair dès environ 7000 itérations, tout en restant comparable aux performances obtenues avec un \(\text{cool\_ratio}\) de 0.5 à 10000 itérations.
+    \item Pour un refroidissement fréquent (\texttt{cool\_time} = 200), on observe qu'un \texttt{cool\_ratio} bas (par exemple, 0.2 ou 0.3) refroidit rapidement le système. Cela conduit à une convergence précoce vers des scores inférieurs à celui du texte clair, probablement en piégeant l'algorithme dans des minima locaux. 
+          En revanche, avec un \texttt{cool\_ratio} plus élevé (0.8 ou 0.9), la température décroît lentement, permettant à l’algorithme de continuer à accepter des solutions moins bonnes pendant un plus grand nombre d’itérations, avant de se stabiliser sur une solution assez proche du texte clair. 
+          On voit clairement que la valeur \texttt{cool\_ratio} = 0.8 donne de meilleurs résultats, à partir de 7000 itérations.
+    \item Pour un refroidissement moins fréquent (\texttt{cool\_time} = 1000), on observe que la décroissance est plus lente, moins immédiate mais finit pas converger. Un \(\text{cool\_ratio}\) élevé (0.8 ou 0.9) retarde la diminution de la température sur le long terme, ce qui donne une impression de stagnation du score moyen, sans aucune amélioration significative.
+          Par contre un \texttt{cool\_ratio} plus bas (0.2 ou 0.3), permet une décroissance rapide mais contrôlée (à cause de la fréquence réduite) de la température et donc du score moyen. Cela permet à l'algorithme de continuer à explorer l'espace de recherche pendant un plus grand nombre d'itérations et de mener à des scores finaux meilleurs. 
+          On remarque qu'un \texttt{cool\_ratio} de 0.3 apparaît comme un bon compromis en convergeant vers un score proche du score du texte clair dès environ 7000 itérations, tout en restant comparable aux performances obtenues avec un \texttt{cool\_ratio} de 0.5 à 10000 itérations.
 \end{itemize}
 
-Dans la suite des comparaisons, nous allons considérer un refroidissement fréquent (\(\text{cool\_time}\) = 200) car il donne de meilleurs résultats en terme de stabilité.
+Dans la suite des comparaisons, nous allons considérer un refroidissement fréquent (\texttt{cool\_time} = 200) car il donne de meilleurs résultats en terme de stabilité.
 
 \begin{figure}[H]
     \centering
@@ -371,7 +386,7 @@ Dans la suite des comparaisons, nous allons considérer un refroidissement fréq
     \label{fig:n3-110-1000}
 \end{figure}
 
-On remarque que les graphes ont la même allure, que ce soit pour un texte court ou long. La différence est que la courbe des scores moyens (peu importe la valeur de \(\text{cool\_ratio}\)) se rapproche beaucoup plus du score du texte clair pour le texte long.
+On remarque que les graphes ont la même allure, que ce soit pour un texte court ou long. La différence est que la courbe des scores moyens (peu importe la valeur de \texttt{cool\_ratio}) se rapproche beaucoup plus du score du texte clair pour le texte long.
 On en déduit que le recuit simulé est plus efficace sur des textes longs, tout comme avec les deux algorithmes précédents.
 
 
@@ -413,7 +428,8 @@ Les voisins de la clé courante sont générés en permutant deux lettres aléat
 
 \vspace{0.5em}
 
-La liste tabou est implémentée comme un ensemble contenant les clés déjà explorées, représentées sous forme de chaînes de caractères. Dans nos expérimentations, nous avons choisi d’utiliser une liste tabou de taille illimitée. Cela signifie qu’aucune solution ne peut être revisitée une fois marquée comme taboue, même après de nombreuses itérations.
+La liste tabou est implémentée comme une \texttt{deque}\footnote{Documentation Python « collections.deque », \url{https://docs.python.org/3/library/collections.html\#collections.deque}} contenant les clés déjà explorées, ce qui rend le test d’appartenance linéaire en \(\mathcal{O}(n)\). Dans nos expérimentations, nous avons choisi d’utiliser une liste tabou de taille illimitée: aucune solution ne peut être revisitée une fois marquée comme taboue, même après de nombreuses itérations.
+
 Cette stratégie maximise l’exploration de l’espace des clés, au prix d’un temps d’exécution plus long. Elle agit comme une forme implicite de diversification, forçant l’algorithme à s’éloigner progressivement de la solution initiale. En contrepartie, il devient impossible de revenir sur une bonne solution précédemment écartée. Toutefois, sur des clés de taille modeste (26 lettres), cette stratégie s’est révélée efficace et n’a pas conduit à des impasses, même sur de longues séquences d’itérations.
 
 \vspace{0.5em}
@@ -440,7 +456,7 @@ Nous avons testé l’algorithme pour differentes tailles de texte en utilisant 
     \label{fig:tabou_taille}
 \end{figure}
 
-On constate, comme pour le \textit{hill climbing}, que les performances augmentent nettement avec la taille du texte. À 110 caractères, les résultats sont très variables d’un essai à l’autre, tandis qu’à partir de 200 caractères, les scores deviennent plus réguliers et plus proches du texte clair. Au-delà de 300 caractères, ce phénomène se stabilise, et les gains sont faibles, ce qui nous conduit à considérer 300 caractères comme une taille suffisante pour obtenir des résultats fiables avec cette méthode. C'est en effet ce nous confirme la figure~\ref{annexe:tabou_500} en \hyperref[sec:annexes]{annexes}.
+On constate, comme pour le \textit{hill climbing}, que les performances augmentent nettement avec la taille du texte. À 110 caractères, les résultats sont très variables d’un essai à l’autre, tandis qu’à partir de 200 caractères, les scores deviennent plus réguliers et plus proches du texte clair. Au-delà de 300 caractères, ce phénomène se stabilise, et les gains sont faibles, ce qui nous conduit à considérer 300 caractères comme une taille suffisante pour obtenir des résultats fiables avec cette méthode. C'est en effet ce que nous confirme la figure~\ref{annexe:tabou_500} en \hyperref[sec:annexes]{annexes}.
 
 \medskip
 
@@ -484,7 +500,7 @@ et de sa mémoire qu'elle doit parcourir à chaque itération.
 \label{sec:Taux_de_réussite}
 
 Nous allons d'abord définir l'indice de lisibilité noté \textbf{idl} du message déchiffré. Cet indice, qui varie entre 0 (texte illisible) et 1 (texte parfaitement lisible), est calculé à partir de la correspondance entre le dictionnaire de chiffrement réel et celui obtenu par cryptanalyse, en pondérant chaque lettre par sa fréquence en français. 
-La formule utilisée est la suivante :
+La formule utilisée est la suivante:
 
 \[
 idl = \sum_{c \in \mathcal{A}} p(c) \cdot \delta\Bigl(\texttt{dico\_trouve}(c) = \texttt{dico\_reel}(c)\Bigr)
@@ -501,7 +517,7 @@ où :
 Pour les besoins de ce projet, cette formule repose sur l'hypothèse que nous disposons de la clé de chiffrement, ce qui n'est pas toujours le cas en pratique.
 On ne se contente pas de compter le nombre de lettres correctement identifiées; chaque correspondance est pondérée par l'importance statistique de la lettre. Ainsi, ne pas trouver le bon correspondant pour une lettre peu fréquente (par exemple, la lettre "w") aura un impact limité sur l'indice idl, alors que l'absence d'une lettre très fréquente (comme "E") pénalisera fortement le score.
 
-Pour qualifier une cryptanalyse de \og réussie \fg{}, on considère que l'indice de lisibilité idl doit être supérieur à 0.9 (90\%). Le taux de réussite d'un algorithme donné est calculé en comptant le nombre de cryptanalyse ayant \og réussie \fg{} sur 500 exécutions indépendantes et pour chaque taille de texte. Les résultats sont présentés sur la figure \ref{fig:tous-reussite}.
+Pour qualifier une cryptanalyse de \og réussie \fg{}, on considère que l'indice de lisibilité idl doit être supérieur à 0.9 (90\%). Le taux de réussite d'un algorithme donné est calculé en comptant le nombre de cryptanalyses ayant \og réussies \fg{} sur 500 exécutions indépendantes et pour chaque taille de texte. Les résultats sont présentés sur la figure \ref{fig:tous-reussite}.
 
 \begin{figure}[H]
     \centering
@@ -591,13 +607,20 @@ Enfin, dépasser la simple analyse des fréquences permettrait de rendre les att
     \caption{Influence des n-grammes. Texte long (1150 caractères) avec recuit simulé.}
     \label{fig:rs-n2-n4-1150}
 \end{figure}
+
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{courbe_tabou_509.png}
-    \caption{Évolution du score moyen pour un texte de 509 caractères avec $n = 3$ (recherche tabou).}
+    \includegraphics[width=0.7\textwidth, height=5.1cm]{courbe_tabou_509.png}
+    \caption{Évolution du score moyen pour un texte de 509 caractères ($n = 3$, recherche tabou).}
     \label{annexe:tabou_500}
 \end{figure}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth, height=5.1cm]{hillclimbOpt_n3_taille110.png}
+    \caption{Influence de \texttt{max\_stagnation} (hill climbing optimisé) }
+    \label{fig:hc_optimise_stagnations}
+\end{figure}
 
 \clearpage
 \addcontentsline{toc}{section}{Annexes}\label{sec:annexes}
@@ -607,6 +630,7 @@ Enfin, dépasser la simple analyse des fréquences permettrait de rendre les att
     \item Page web Bibmath, \url{https://www.bibmath.net/crypto/}
     \item Didier Müller, \textit{Les métaheuristiques en cryptanalyse},  Bulletin no 143 de la \href{https://www.vsmp.ch/}{SSPMP}, mai 2020, \url{https://www.apprendre-en-ligne.net/auteur/articles/metaheuristiques-cryptanalyse.pdf}
     \item \textit{Automated cryptanalysis of substitution cipher using hill climbing}, \url{https://www.montis.pmf.ac.me/vol44/11.pdf}
+    \item Jean-Louis Morel (alias Rossignol), \textit{Décrypter une substitution monalphabétique}, 2015, \url{https://bribes.org/crypto/substitution_mono.html}
     \item Helder Brito, O'nel Hounnouvi, \textit{Dépôt GitHub du projet}, \url{https://github.com/onelhounnouvi/LU2IN013-Projet}
 \end{enumerate}
 
