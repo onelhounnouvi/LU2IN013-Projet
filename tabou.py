@@ -43,3 +43,17 @@ def recherche_tabou(message, nb_iter, dico_ref, n):
         
     #print(f"Meilleur score trouve : {score_courant}")
     return meilleur_message, meilleur_score, score_history, meilleur_dico
+
+if __name__ == "__main__":
+    ngram = 3
+    corpus_ref = file_to_str("Visualisation/Utilitaires/germinal_nettoye")
+    dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, ngram))
+
+    a_dechiffrer = file_to_str("Visualisation/Utilitaires/chiffres/chiffre_germinal_20_110_1")
+    print("Exemple d'utilisation de la recherche tabou : \n")
+    print("Texte à déchiffrer : \n" + a_dechiffrer)
+    print("Score initial : " + str(score(dico_ngrams, a_dechiffrer, ngram))+ "\n")
+    texte, scoref,_,_ = recherche_tabou(a_dechiffrer, 200, dico_ngrams, ngram)
+
+    print("Texte déchiffré : \n" + texte)
+    print("Score final : " + str(scoref))

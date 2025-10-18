@@ -47,15 +47,16 @@ def recuit_simule(message, nbPermutations, dico_ref, n, cool_ratio, cool_time, t
     #print(f"Meilleur score trouve : {meilleur_score}")
     return meilleur_message, meilleur_score, score_history, meilleur_dico
 
-""""
-corpus_ref = file_to_str("germinal_nettoye")
-dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 3))
+if __name__ == "__main__":
+    ngram = 3
+    corpus_ref = file_to_str("Visualisation/Utilitaires/germinal_nettoye")
+    dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, ngram))
 
-FREQS_LETTRES = normaliser_dico(dico_n_grammes(corpus_ref, 1))
+    a_dechiffrer = file_to_str("Visualisation/Utilitaires/chiffres/chiffre_germinal_20_110_1")
+    print("Exemple d'utilisation du recuit simulé : \n")
+    print("Texte à déchiffrer : \n" + a_dechiffrer)
+    print("Score initial : " + str(score(dico_ngrams, a_dechiffrer, ngram))+ "\n")
+    texte, scoref,_,_ = recuit_simule(a_dechiffrer, 8000, dico_ngrams, ngram, 0.2, 200, calculer_temperature_initiale(a_dechiffrer, dico_ngrams, ngram))
 
-print(f"FR{FREQS_LETTRES}")
-a_dechiffrer = file_to_str("chiffres/chiffre_germinal_3_318_1")
-#a_dechiffrer = file_to_str("chiffres/chiffre_germinal_20_110_1")
-texte, scoref, score_tab, dico = recuit_simule(a_dechiffrer, 8000, dico_ngrams, 3, 0.75, 200, calculer_temperature_initiale(a_dechiffrer, dico_ngrams, 3))
-
-str_to_file(texte, "resultat")"""
+    print("Texte déchiffré : \n" + texte)
+    print("Score final : " + str(scoref))

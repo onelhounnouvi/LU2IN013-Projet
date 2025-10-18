@@ -81,11 +81,17 @@ def hill_climbing_optimise(message, nbPermutations, dico_ref, n, max_stagnation)
     #print(f"Meilleur score trouvé : {meilleur_score}")
     return meilleur_message, meilleur_score, score_history, meilleur_dico
 
-"""corpus_ref = file_to_str("germinal_nettoye")
-dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, 4))
 
-a_dechiffrer = file_to_str("chiffres/chiffre_germinal_20_110_1")
-texte, scoref= hill_climbing_optimise(a_dechiffrer, 5000, dico_ngrams, 4, 150)
+if __name__ == "__main__":
+    ngram = 3
+    corpus_ref = file_to_str("Visualisation/Utilitaires/germinal_nettoye")
+    dico_ngrams = normaliser_dico(dico_n_grammes(corpus_ref, ngram))
 
-print(score(dico_ngrams, "ETTOUTLETEMPSQUELESVISITEURSRESTERENTENFACEELLESENDEGOISERENTLESVOILAQUISORTENTDITENFINLALEVAQUEILSFONTLETOUR", 4))
-str_to_file(texte, "resultat")"""
+    a_dechiffrer = file_to_str("Visualisation/Utilitaires/chiffres/chiffre_germinal_20_110_1")
+    print("Exemple d'utilisation du hill climbing optimisé : \n")
+    print("Texte à déchiffrer : \n" + a_dechiffrer)
+    print("Score initial : " + str(score(dico_ngrams, a_dechiffrer, ngram))+ "\n")
+    texte, scoref,_,_ = hill_climbing_optimise(a_dechiffrer, 5000, dico_ngrams, ngram, 150)
+
+    print("Texte déchiffré : \n" + texte)
+    print("Score final : " + str(scoref))
